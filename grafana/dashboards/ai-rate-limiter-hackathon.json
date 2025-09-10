@@ -223,14 +223,14 @@
             "thresholds": {
               "mode": "absolute",
               "steps": [
-                {"color": "green", "value": null},
-                {"color": "red", "value": 3},
-                {"color": "yellow", "value": 8},
-                {"color": "green", "value": 15}
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 10},
+                {"color": "green", "value": 20},
+                {"color": "blue", "value": 50}
               ]
             },
             "min": 0,
-            "max": 80
+            "max": 120
           },
           "overrides": [
             {
