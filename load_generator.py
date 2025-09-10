@@ -34,6 +34,7 @@ SCENARIOS = {
     "ddos": LoadPattern("⚡ DDoS Attack", 30, 100, 80, 50, "Simulated attack", 2.0),
     "viral": LoadPattern("🔥 Viral Content", 45, 80, 60, 40, "Content going viral", 1.5),
     "maintenance": LoadPattern("🌙 Low Traffic", 15, 2, 1, 1, "Maintenance window"),
+    "enterprise": LoadPattern("🏆 Enterprise Priority", 60, 50, 20, 8, "Enterprise gets priority scaling", 2.5),
 }
 
 class Colors:
@@ -60,8 +61,15 @@ class HackathonLoadGenerator:
             "responses_error": 0,
             "ai_decisions_seen": 0,
             "governance_events": 0,
+            "auto_approvals": 0,
+            "enterprise_prioritized": 0,
             "start_time": time.time()
         }
+        
+        # Auto-approval settings for governance demo
+        self.auto_approve_enabled = True
+        self.approval_interval = 2.0  # Check every 2 seconds
+        self.last_approval_check = 0
         
         # Handle Ctrl+C gracefully
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -132,6 +140,50 @@ class HackathonLoadGenerator:
             self.stats["responses_error"] += 1
             return 500
     
+    async def check_and_approve_decisions(self):
+        """🏆 Auto-approve governance decisions to demonstrate enterprise priority"""
+        if not self.auto_approve_enabled or not self.running:
+            return
+            
+        try:
+            # Get pending decisions
+            async with self.session.get(f"{self.base_url}/ai/pending") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    pending = data.get("pending", [])
+                    
+                    if pending:
+                        # Sort by priority - enterprise first!
+                        enterprise_decisions = [d for d in pending if d.get("tenant") == "ent"]
+                        other_decisions = [d for d in pending if d.get("tenant") != "ent"]
+                        
+                        # Approve enterprise decisions immediately
+                        for decision in enterprise_decisions:
+                            await self.approve_decision(decision["id"], "🏆 ENT-PRIORITY")
+                            self.stats["enterprise_prioritized"] += 1
+                            
+                        # Approve a few other decisions to keep system flowing
+                        for decision in other_decisions[:2]:  # Limit non-enterprise approvals
+                            await self.approve_decision(decision["id"], "AUTO-FLOW")
+                            
+        except Exception as e:
+            if self.verbose:
+                print(f"{Colors.YELLOW}Auto-approval error: {e}{Colors.END}")
+    
+    async def approve_decision(self, decision_id: str, reason: str = "AUTO"):
+        """Approve a specific governance decision"""
+        try:
+            async with self.session.post(f"{self.base_url}/ai/approve/{decision_id}") as response:
+                if response.status == 200:
+                    self.stats["auto_approvals"] += 1
+                    if self.verbose:
+                        print(f"{Colors.GREEN}✅ {reason}: Approved decision {decision_id[:8]}...{Colors.END}")
+                    return True
+        except Exception as e:
+            if self.verbose:
+                print(f"{Colors.RED}Approval error for {decision_id}: {e}{Colors.END}")
+        return False
+    
     async def run_pattern(self, pattern: LoadPattern, show_progress=True):
         """Execute a specific load pattern"""
         if show_progress:
@@ -157,6 +209,11 @@ class HackathonLoadGenerator:
             
             while self.running and (time.time() - start_time) < pattern.duration:
                 current_time = time.time()
+                
+                # 🏆 Periodic auto-approval check to keep governance flowing
+                if current_time - self.last_approval_check > self.approval_interval:
+                    await self.check_and_approve_decisions()
+                    self.last_approval_check = current_time
                 
                 if current_time >= next_request_time:
                     # Add some surge factor for dramatic effect
@@ -216,6 +273,8 @@ class HackathonLoadGenerator:
    {Colors.RED}❌ Errors: {self.stats['responses_error']:,}{Colors.END}
    {Colors.BLUE}🤖 AI Decisions: {self.stats['ai_decisions_seen']:,}{Colors.END}
    {Colors.PURPLE}⚖️ Governance Events: {self.stats['governance_events']:,}{Colors.END}
+   {Colors.BOLD}{Colors.GREEN}🏆 Auto-Approvals: {self.stats['auto_approvals']:,}{Colors.END}
+   {Colors.BOLD}{Colors.PURPLE}👑 Enterprise Priority: {self.stats['enterprise_prioritized']:,}{Colors.END}
    {Colors.CYAN}⚡ Average RPS: {rps:.1f}{Colors.END}
    {Colors.WHITE}📈 Success Rate: {success_rate:.1f}%{Colors.END}
         """)
@@ -247,6 +306,7 @@ class HackathonLoadGenerator:
             demo_sequence = [
                 ("startup", "Establishing baseline performance"),
                 ("business", "Normal business operations"), 
+                ("enterprise", "🏆 Enterprise priority scaling demonstration"),
                 ("launch", "Product launch creates demand surge"),
                 ("blackfriday", "Peak traffic - AI vs Static showdown!")
             ]

@@ -97,12 +97,15 @@ Write-Host "   Backend Service:   http://localhost:8000" -ForegroundColor White
 Write-Host ""
 Write-Host "Demo Commands:" -ForegroundColor Cyan
 Write-Host "   Load Generator:       python load_generator.py --demo" -ForegroundColor White
-Write-Host "   Single Scenario:      python load_generator.py --scenario blackfriday" -ForegroundColor White
+Write-Host "   Enterprise Demo:      python load_generator.py --scenario enterprise" -ForegroundColor White
+Write-Host "   Auto-Approve Queue:   python auto_approve_governance.py" -ForegroundColor White
 Write-Host "   Health Check:         python load_generator.py --check" -ForegroundColor White
 Write-Host ""
 Write-Host "Grafana Login: admin/admin (change on first login)" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Ready for hackathon demo! Run the load generator to see AI in action." -ForegroundColor Green
 Write-Host ""
-Write-Host "Pro tip: Run 'python load_generator.py --demo' in another terminal" -ForegroundColor Magenta
-Write-Host "and watch the AI make intelligent rate limiting decisions in real-time!" -ForegroundColor Magenta
+Write-Host "Pro tip for Enterprise Demo:" -ForegroundColor Magenta
+Write-Host "1. Run 'python auto_approve_governance.py' in one terminal" -ForegroundColor Magenta
+Write-Host "2. Run 'python load_generator.py --demo' in another terminal" -ForegroundColor Magenta
+Write-Host "3. Watch Enterprise customers get priority scaling in Grafana!" -ForegroundColor Magenta

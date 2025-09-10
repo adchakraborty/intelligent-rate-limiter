@@ -31,7 +31,30 @@
               ]
             },
             "unit": "reqps"
-          }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byRegexp", "options": ".*ent.*"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+                {"id": "displayName", "value": "🏆 Enterprise"}
+              ]
+            },
+            {
+              "matcher": {"id": "byRegexp", "options": ".*pro.*"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+                {"id": "displayName", "value": "💼 Professional"}
+              ]
+            },
+            {
+              "matcher": {"id": "byRegexp", "options": ".*free.*"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+                {"id": "displayName", "value": "🆓 Free"}
+              ]
+            }
+          ]
         },
         "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
       },
@@ -107,7 +130,7 @@
       },
       {
         "id": 5,
-        "title": "⚖️ Governance Queue",
+        "title": "🏆 Enterprise Priority Queue",
         "type": "stat",
         "targets": [
           {
@@ -124,8 +147,18 @@
                 {"color": "yellow", "value": 1},
                 {"color": "red", "value": 3}
               ]
+            },
+            "custom": {
+              "displayMode": "gradient"
             }
           }
+        },
+        "options": {
+          "textMode": "auto",
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "center",
+          "displayMode": "gradient"
         },
         "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8}
       },
@@ -228,6 +261,79 @@
           }
         ],
         "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24}
+      },
+      {
+        "id": 9,
+        "title": "🏆 Enterprise Scaling Advantage",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rl_policy_rps{tenant=\"ent\"}",
+            "legendFormat": "🏆 Enterprise Adaptive Limit"
+          },
+          {
+            "expr": "rl_policy_rps{tenant=\"pro\"}",
+            "legendFormat": "💼 Professional Limit"
+          },
+          {
+            "expr": "rl_policy_rps{tenant=\"free\"}",
+            "legendFormat": "🆓 Free Tier Limit"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "lineWidth": 3,
+              "fillOpacity": 10,
+              "gradientMode": "scheme"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "transparent", "value": null},
+                {"color": "green", "value": 15}
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "🏆 Enterprise Adaptive Limit"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+                {"id": "custom.lineWidth", "value": 4},
+                {"id": "custom.fillOpacity", "value": 20}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "💼 Professional Limit"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+                {"id": "custom.lineWidth", "value": 2}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "🆓 Free Tier Limit"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+                {"id": "custom.lineWidth", "value": 1}
+              ]
+            }
+          ]
+        },
+        "options": {
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          },
+          "legend": {
+            "displayMode": "visible",
+            "placement": "bottom",
+            "calcs": ["lastNotNull", "max"]
+          }
+        },
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32}
       }
   ],
   "schemaVersion": 30,
