@@ -85,9 +85,10 @@ class HackathonLoadGenerator:
         connector = aiohttp.TCPConnector(
             limit=50,           # Reduced from 100 for Windows stability
             limit_per_host=25,  # Reduced from 50 for Windows stability
-            keepalive_timeout=30,
             enable_cleanup_closed=True,
-            force_close=True    # Force close connections to prevent lingering sockets
+            force_close=True,   # Force close connections to prevent lingering sockets
+            ttl_dns_cache=300,  # DNS cache TTL
+            use_dns_cache=True
         )
         timeout = aiohttp.ClientTimeout(total=8, connect=3)  # Reduced timeouts for faster recovery
         self.session = aiohttp.ClientSession(
