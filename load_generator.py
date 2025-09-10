@@ -30,7 +30,7 @@ SCENARIOS = {
     "startup": LoadPattern("🌅 Morning Startup", 20, 8, 5, 3, "Light morning traffic"),
     "business": LoadPattern("📈 Business Hours", 25, 20, 12, 6, "Normal operations - triggers AI"),
     "launch": LoadPattern("🚀 Product Launch", 30, 35, 22, 12, "Product announcement surge - triggers governance"),
-    "blackfriday": LoadPattern("🛒 Black Friday", 25, 50, 32, 18, "Peak shopping event - major governance"),
+    "blackfriday": LoadPattern("🛒 Black Friday", 25, 45, 28, 16, "Peak shopping event - major governance"),
     "ddos": LoadPattern("⚡ DDoS Attack", 20, 100, 80, 50, "Simulated attack", 2.0),
     "viral": LoadPattern("🔥 Viral Content", 25, 60, 40, 25, "Content going viral", 1.5),
     "maintenance": LoadPattern("🌙 Low Traffic", 10, 2, 1, 1, "Maintenance window"),
@@ -81,15 +81,32 @@ class HackathonLoadGenerator:
         self.running = False
     
     async def start_session(self):
-        """Initialize HTTP session"""
-        connector = aiohttp.TCPConnector(limit=100, limit_per_host=50)
-        timeout = aiohttp.ClientTimeout(total=10, connect=5)
-        self.session = aiohttp.ClientSession(connector=connector, timeout=timeout)
+        """Initialize HTTP session with Windows-optimized settings"""
+        connector = aiohttp.TCPConnector(
+            limit=50,           # Reduced from 100 for Windows stability
+            limit_per_host=25,  # Reduced from 50 for Windows stability
+            keepalive_timeout=30,
+            enable_cleanup_closed=True,
+            force_close=True    # Force close connections to prevent lingering sockets
+        )
+        timeout = aiohttp.ClientTimeout(total=8, connect=3)  # Reduced timeouts for faster recovery
+        self.session = aiohttp.ClientSession(
+            connector=connector, 
+            timeout=timeout,
+            connector_owner=True
+        )
     
     async def close_session(self):
-        """Close HTTP session"""
+        """Close HTTP session with proper cleanup for Windows"""
         if self.session:
-            await self.session.close()
+            try:
+                await self.session.close()
+                # Give time for cleanup on Windows
+                await asyncio.sleep(0.1)
+            except Exception as e:
+                if self.verbose:
+                    print(f"{Colors.YELLOW}Session close warning: {e}{Colors.END}")
+                # Suppress Windows-specific connection errors during cleanup
     
     async def send_request(self, tenant: str, endpoint: str = "/api/v1/resourceA"):
         """Send a single API request with proper authentication"""
@@ -135,8 +152,14 @@ class HackathonLoadGenerator:
         except asyncio.TimeoutError:
             self.stats["responses_error"] += 1
             return 408
+        except (aiohttp.ClientConnectorError, aiohttp.ServerDisconnectedError, OSError) as e:
+            # Common Windows asyncio/socket errors - suppress verbose output
+            if "WinError 10022" not in str(e) and self.verbose:
+                print(f"{Colors.YELLOW}Connection error: {e}{Colors.END}")
+            self.stats["responses_error"] += 1
+            return 503
         except Exception as e:
-            if self.verbose:
+            if self.verbose and "WinError 10022" not in str(e):
                 print(f"{Colors.RED}Request error: {e}{Colors.END}")
             self.stats["responses_error"] += 1
             return 500
@@ -344,6 +367,8 @@ class HackathonLoadGenerator:
             print(f"\n{Colors.YELLOW}🛑 Demo interrupted by user{Colors.END}")
         finally:
             await self.close_session()
+            # Windows-specific: Give extra time for async cleanup
+            await asyncio.sleep(0.2)
     
     async def health_check(self):
         """Check if the rate limiter is responding"""
