@@ -11,13 +11,21 @@
     "panels": [
       {
         "id": 1,
-        "title": "🚀 AI vs Static Performance",
-        "description": "Real-time request success rates showing AI's adaptive advantage over static rate limiting",
-        "type": "stat",
+        "title": "🚀 Live Traffic & AI Responses",
+        "description": "Real-time incoming traffic and AI rate limiting responses. Shows current load and system adaptation",
+        "type": "timeseries",
         "targets": [
           {
-            "expr": "rate(rl_requests_total[1m])",
-            "legendFormat": "{{tenant}} {{outcome}}"
+            "expr": "rate(rl_requests_total{outcome=\"ok\"}[30s])",
+            "legendFormat": "{{tenant}} Successful RPS"
+          },
+          {
+            "expr": "rate(rl_requests_total{outcome=\"blocked\"}[30s])",
+            "legendFormat": "{{tenant}} Blocked RPS"
+          },
+          {
+            "expr": "rl_real_time_rps",
+            "legendFormat": "{{tenant}} Current Load"
           }
         ],
         "fieldConfig": {

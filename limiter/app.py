@@ -37,9 +37,9 @@ REVENUE_PER_REQUEST = {
 }
 
 PLAN_BASE = {
-    "free": {"rps": 3.0, "burst": 10},
-    "pro":  {"rps": 8.0, "burst": 20},
-    "ent":  {"rps": 15.0, "burst": 40},
+    "free": {"rps": 5.0, "burst": 15},    # Increased from 3 for better demo visibility
+    "pro":  {"rps": 12.0, "burst": 30},   # Increased from 8 for better demo visibility  
+    "ent":  {"rps": 25.0, "burst": 60},   # Increased from 15 for better demo visibility
 }
 
 API_KEYS = {

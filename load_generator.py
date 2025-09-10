@@ -25,16 +25,16 @@ class LoadPattern:
     description: str
     surge_factor: float = 1.0
 
-# 🎪 Hackathon demo scenarios (2-minute demo total) - BALANCED FOR 2x GOVERNANCE
+# 🎪 Hackathon demo scenarios - REALISTIC SUSTAINED TRAFFIC FOR AI VISIBILITY
 SCENARIOS = {
-    "startup": LoadPattern("🌅 Morning Startup", 20, 8, 5, 3, "Light morning traffic"),
-    "business": LoadPattern("📈 Business Hours", 25, 20, 12, 6, "Normal operations - triggers AI"),
-    "launch": LoadPattern("🚀 Product Launch", 30, 35, 22, 12, "Product announcement surge - triggers governance"),
-    "blackfriday": LoadPattern("🛒 Black Friday", 25, 45, 28, 16, "Peak shopping event - major governance"),
+    "startup": LoadPattern("🌅 Morning Startup", 20, 12, 8, 4, "Light sustained traffic - triggers AI"),
+    "business": LoadPattern("📈 Business Hours", 25, 25, 15, 8, "Normal operations - continuous AI decisions"),
+    "launch": LoadPattern("🚀 Product Launch", 30, 40, 25, 15, "Product surge - triggers governance queue"),
+    "blackfriday": LoadPattern("🛒 Black Friday", 25, 55, 35, 20, "Peak shopping - heavy governance activity"),
     "ddos": LoadPattern("⚡ DDoS Attack", 20, 100, 80, 50, "Simulated attack", 2.0),
-    "viral": LoadPattern("🔥 Viral Content", 25, 60, 40, 25, "Content going viral", 1.5),
-    "maintenance": LoadPattern("🌙 Low Traffic", 10, 2, 1, 1, "Maintenance window"),
-    "enterprise": LoadPattern("🏆 Enterprise Priority", 30, 40, 18, 8, "Enterprise gets priority scaling", 2.0),
+    "viral": LoadPattern("🔥 Viral Content", 25, 70, 45, 30, "Content going viral", 1.5),
+    "maintenance": LoadPattern("🌙 Low Traffic", 10, 3, 2, 1, "Maintenance window"),
+    "enterprise": LoadPattern("🏆 Enterprise Priority", 30, 50, 20, 10, "Enterprise gets priority scaling", 2.0),
 }
 
 class Colors:
@@ -148,6 +148,15 @@ class HackathonLoadGenerator:
                 if "X-Governance-Required" in response.headers:
                     self.stats["governance_events"] += 1
                 
+                # Real-time feedback for high activity
+                if status == 200 and self.stats["requests_sent"] % 50 == 0:
+                    if self.verbose:
+                        rps_current = self.stats["requests_sent"] / max(1, time.time() - self.stats["start_time"])
+                        print(f"{Colors.CYAN}📊 {self.stats['requests_sent']:,} requests sent | {rps_current:.1f} RPS | {tenant.upper()}{Colors.END}")
+                        
+                elif status == 429 and self.verbose:
+                    print(f"{Colors.YELLOW}🚫 Rate limited: {tenant.upper()}{Colors.END}")
+                
                 return status
                 
         except asyncio.TimeoutError:
@@ -238,6 +247,7 @@ class HackathonLoadGenerator:
             """Schedule requests for a specific tenant at target RPS"""
             next_request_time = time.time()
             requests_sent = 0
+            last_status_check = time.time()
             
             while self.running and (time.time() - start_time) < pattern.duration:
                 current_time = time.time()
@@ -246,6 +256,19 @@ class HackathonLoadGenerator:
                 if current_time - self.last_approval_check > self.approval_interval:
                     await self.check_and_approve_decisions()
                     self.last_approval_check = current_time
+                
+                # Periodic system status check
+                if current_time - last_status_check > 10 and self.verbose:  # Every 10 seconds
+                    try:
+                        async with self.session.get(f"{self.base_url}/health", timeout=aiohttp.ClientTimeout(total=2)) as health_resp:
+                            if health_resp.status == 200:
+                                health_data = await health_resp.json()
+                                pending = health_data.get("pending_decisions", 0)
+                                policies = health_data.get("policies_active", 0)
+                                print(f"{Colors.BLUE}🎯 AI System: {policies} policies active, {pending} pending decisions{Colors.END}")
+                    except:
+                        pass  # Ignore health check failures during load test
+                    last_status_check = current_time
                 
                 if current_time >= next_request_time:
                     # ALWAYS send requests to ensure AI threshold is met
