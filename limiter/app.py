@@ -26,8 +26,8 @@ logger = logging.getLogger('ai-rate-limiter')
 PORT = int(os.getenv("PORT", "8080"))
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://backend:8000")
 DECISION_MIN_CONF = float(os.getenv("DECISION_MIN_CONF", "0.6"))
-HEURISTIC_EVERY_SEC = float(os.getenv("HEURISTIC_EVERY_SEC", "3.0"))
-LARGE_CHANGE_FACTOR = float(os.getenv("LARGE_CHANGE_FACTOR", "2.0"))  # Only changes > 2x go to governance
+HEURISTIC_EVERY_SEC = float(os.getenv("HEURISTIC_EVERY_SEC", "1.5"))  # DEMO: Faster analysis for more AI calls
+LARGE_CHANGE_FACTOR = float(os.getenv("LARGE_CHANGE_FACTOR", "1.5"))  # DEMO: Changes > 1.5x go to governance for more governance events
 
 # Customer tiers and revenue
 REVENUE_PER_REQUEST = {
@@ -817,11 +817,12 @@ def _heuristics_loop():
             # Detect anomalies
             _detect_anomaly(tenant, endpoint, ok_rps)
             
-            # CRITICAL: Always call AI if there's ANY measurable activity (lowered threshold for demo)
-            if total_requests < 0.001:  # FIXED: Only skip if absolutely no activity (less than 1/1000 request)
+            # CRITICAL: ALWAYS call AI when there's ANY traffic (DEMO MODE)
+            if total_requests <= 0:  # FIXED: Only skip if absolutely zero activity
                 continue
             
             logger.info(f"🤖 AI CALL TRIGGERED: {tenant}/{endpoint} - {total_requests:.3f} requests, {ok_rps:.2f} RPS, util:{utilization:.1%}")
+            logger.info(f"🎯 DEMO MODE: Forcing AI analysis for every traffic window")
             
             # PURE AI DECISION - NO FALLBACK
             ai_raw = _call_ollama_ai(tenant, endpoint, ok_rps, blocked_ratio, utilization)

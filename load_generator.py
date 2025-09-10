@@ -25,12 +25,12 @@ class LoadPattern:
     description: str
     surge_factor: float = 1.0
 
-# 🎪 Hackathon demo scenarios (2-minute demo total)
+# 🎪 Hackathon demo scenarios (2-minute demo total) - ENHANCED FOR GOVERNANCE
 SCENARIOS = {
-    "startup": LoadPattern("🌅 Morning Startup", 20, 5, 3, 2, "Light morning traffic"),
-    "business": LoadPattern("📈 Business Hours", 25, 15, 10, 5, "Normal operations"),
-    "launch": LoadPattern("🚀 Product Launch", 30, 35, 25, 15, "Product announcement surge"),
-    "blackfriday": LoadPattern("🛒 Black Friday", 25, 60, 40, 25, "Peak shopping event"),
+    "startup": LoadPattern("🌅 Morning Startup", 20, 8, 5, 3, "Light morning traffic"),
+    "business": LoadPattern("📈 Business Hours", 25, 25, 15, 8, "Normal operations - triggers AI"),
+    "launch": LoadPattern("🚀 Product Launch", 30, 45, 30, 20, "Product announcement surge - triggers governance"),
+    "blackfriday": LoadPattern("🛒 Black Friday", 25, 70, 50, 35, "Peak shopping event - major governance"),
     "ddos": LoadPattern("⚡ DDoS Attack", 20, 100, 80, 50, "Simulated attack", 2.0),
     "viral": LoadPattern("🔥 Viral Content", 25, 80, 60, 40, "Content going viral", 1.5),
     "maintenance": LoadPattern("🌙 Low Traffic", 10, 2, 1, 1, "Maintenance window"),
@@ -161,8 +161,8 @@ class HackathonLoadGenerator:
                             decision_age = current_time - decision.get("created", current_time)
                             scaling_factor = decision.get("scaling_factor", 1.0)
                             
-                            # Only approve if it's been pending for the delay AND it's a large change (>2x)
-                            if decision_age >= self.approval_delay and scaling_factor >= 2.0:
+                            # Only approve if it's been pending for the delay AND it's a large change (>1.5x for demo)
+                            if decision_age >= self.approval_delay and scaling_factor >= 1.5:
                                 tenant = decision.get("tenant", "unknown")
                                 reason = "🏆 ENT-AUTO" if tenant == "ent" else "AUTO-APPROVE"
                                 
