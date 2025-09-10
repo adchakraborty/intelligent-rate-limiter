@@ -353,7 +353,17 @@ def _call_ollama_ai(tenant: str, endpoint: str, ok_rps: float, blocked_ratio: fl
     # Classify traffic scenario
     scenario = _classify_traffic_scenario(tenant, ok_rps, blocked_ratio, utilization)
     
-    # OPTIMIZED prompt for clean JSON parsing
+    # Dynamic example based on tenant tier and scenario
+    if tenant == "ent":
+        example_rps = min(100.0, max(50.0, current_policy["rps"] * 1.5))
+    elif tenant == "pro":
+        example_rps = min(50.0, max(25.0, current_policy["rps"] * 1.2))
+    else:  # free
+        example_rps = min(15.0, max(8.0, current_policy["rps"] * 1.1))
+    
+    example_burst = int(example_rps * 3)
+    
+    # IMPROVED prompt with tier-specific examples
     prompt = f"""Analyze traffic and respond with valid JSON only. No explanations, no markdown.
 
 TENANT: {tenant.upper()}
@@ -364,15 +374,15 @@ BLOCKED: {blocked_ratio:.1%}
 SCENARIO: {scenario}
 
 SCALING RULES:
-- Enterprise: up to 100 RPS
-- Pro: up to 50 RPS  
-- Free: up to 15 RPS
+- Enterprise: 25-100 RPS (premium scaling)
+- Pro: 12-50 RPS (business scaling)  
+- Free: 5-15 RPS (basic scaling)
 - High utilization (>80%): scale up
-- Low utilization (<30%): maintain/down
+- Low utilization (<30%): maintain current
 - High blocking (>20%): scale up immediately
 
 Respond with JSON only:
-{{"action": "up", "new_rps": 25.0, "new_burst": 75, "confidence": 0.85, "reason": "{scenario}_scaling"}}"""
+{{"action": "up", "new_rps": {example_rps:.1f}, "new_burst": {example_burst}, "confidence": 0.85, "reason": "{scenario}_scaling"}}"""
 
     # Track prompt tokens (simplified)
     prompt_tokens = len(prompt.split())
@@ -561,6 +571,10 @@ def _extract_intent_from_response(response_text: str, current_rps: float, scenar
 def _validate_ai_decision(raw, cur_rps, cur_burst):
     try:
         action = str(raw.get("action", "same")).lower()
+        # FIXED: Accept both "maintain" and "same" for stable/maintain actions
+        if action == "maintain":
+            action = "same"
+        
         if action not in ("up", "down", "same"):
             logger.warning(f"⚠️ Invalid action: {action}")
             return {}
@@ -823,14 +837,17 @@ def _heuristics_loop():
                 # Reset stats for next window
                 stats[pair] = {"ok": 0.0, "blocked": 0.0, "since": _now()}
             
-            # Calculate metrics
+            # Calculate metrics with safety checks
             window = max(1.0, _now() - stats_snapshot["since"])
-            ok_count = stats_snapshot["ok"]
-            blocked_count = stats_snapshot["blocked"]
+            ok_count = float(stats_snapshot.get("ok", 0.0))
+            blocked_count = float(stats_snapshot.get("blocked", 0.0))
             ok_rps = ok_count / window
             total_requests = ok_count + blocked_count
             blocked_ratio = (blocked_count / total_requests) if total_requests > 0 else 0.0
-            utilization = ok_rps / max(current_policy["rps"], 1e-6)
+            
+            # Safe utilization calculation with proper bounds
+            policy_rps = max(current_policy.get("rps", 1.0), 0.1)  # Ensure minimum RPS to avoid division issues
+            utilization = ok_rps / policy_rps
             
             # Update basic metrics
             RL_EFFECTIVE_RPS.labels(tenant, endpoint).set(ok_rps)
@@ -898,12 +915,22 @@ def _heuristics_loop():
             logger.info(f"🤖 AI CALL TRIGGERED: {tenant}/{endpoint} - {total_requests:.3f} requests, {ok_rps:.2f} RPS, util:{utilization:.1%}")
             logger.info(f"🎯 DEMO MODE: Forcing AI analysis for every traffic window")
             
-            # PURE AI DECISION - NO FALLBACK
-            ai_raw = _call_ollama_ai(tenant, endpoint, ok_rps, blocked_ratio, utilization)
-            ai_decision = _validate_ai_decision(ai_raw, current_policy["rps"], current_policy["burst"])
+            # ENHANCED AI DECISION with better error handling
+            ai_raw = {}
+            ai_decision = {}
             
-            # FIXED: Update AI engine status and satisfaction after AI call
-            if ai_decision:
+            try:
+                ai_raw = _call_ollama_ai(tenant, endpoint, ok_rps, blocked_ratio, utilization)
+                if ai_raw:  # Only validate if we got a response
+                    ai_decision = _validate_ai_decision(ai_raw, current_policy.get("rps", 10.0), current_policy.get("burst", 30))
+                else:
+                    logger.warning(f"⚠️ AI CALL EMPTY: {tenant}/{endpoint} - No response from OLLAMA")
+            except Exception as e:
+                logger.error(f"💥 AI CALL ERROR: {tenant}/{endpoint} - {e}")
+                ai_decision = {}  # Ensure it's empty on error
+            
+            # IMPROVED: AI engine status and decision handling
+            if ai_decision and ai_decision.get("action") in ("up", "down", "same"):
                 RL_AI_ENGINE_ACTIVE.set(1)  # AI is working
                 logger.info(f"🤖 AI ENGINE ACTIVE: Decision made for {tenant}/{endpoint}")
                 
@@ -919,9 +946,19 @@ def _heuristics_loop():
                 RL_CUSTOMER_SATISFACTION.labels(tenant).set(satisfaction)
                 
             else:
-                RL_AI_ENGINE_ACTIVE.set(0)  # AI failed
-                logger.error(f"💥 AI ENGINE OFFLINE: Failed for {tenant}/{endpoint}")
-                continue  # Skip to next iteration if AI fails
+                # MORE RESILIENT: Don't completely fail, just log and use current policy
+                RL_AI_ENGINE_ACTIVE.set(0.5)  # Partial AI operation (trying but failing)
+                logger.warning(f"⚠️ AI DECISION INCOMPLETE: {tenant}/{endpoint} - Using current policy")
+                
+                # Create a "maintain" decision to keep current policy
+                ai_decision = {
+                    "action": "same",
+                    "new_rps": current_policy.get("rps", 10.0),
+                    "new_burst": current_policy.get("burst", 30),
+                    "confidence": 0.5,
+                    "reason": "ai_fallback_maintain"
+                }
+                logger.info(f"🔄 FALLBACK APPLIED: {tenant}/{endpoint} - Maintaining current limits")
             
             # Apply AI decision with governance
             result = _apply_or_queue(
