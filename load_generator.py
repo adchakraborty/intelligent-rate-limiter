@@ -25,16 +25,16 @@ class LoadPattern:
     description: str
     surge_factor: float = 1.0
 
-# 🎪 Hackathon demo scenarios (2-minute demo total) - ENHANCED FOR GOVERNANCE
+# 🎪 Hackathon demo scenarios (2-minute demo total) - BALANCED FOR 2x GOVERNANCE
 SCENARIOS = {
     "startup": LoadPattern("🌅 Morning Startup", 20, 8, 5, 3, "Light morning traffic"),
-    "business": LoadPattern("📈 Business Hours", 25, 25, 15, 8, "Normal operations - triggers AI"),
-    "launch": LoadPattern("🚀 Product Launch", 30, 45, 30, 20, "Product announcement surge - triggers governance"),
-    "blackfriday": LoadPattern("🛒 Black Friday", 25, 70, 50, 35, "Peak shopping event - major governance"),
+    "business": LoadPattern("📈 Business Hours", 25, 20, 12, 6, "Normal operations - triggers AI"),
+    "launch": LoadPattern("🚀 Product Launch", 30, 35, 22, 12, "Product announcement surge - triggers governance"),
+    "blackfriday": LoadPattern("🛒 Black Friday", 25, 50, 32, 18, "Peak shopping event - major governance"),
     "ddos": LoadPattern("⚡ DDoS Attack", 20, 100, 80, 50, "Simulated attack", 2.0),
-    "viral": LoadPattern("🔥 Viral Content", 25, 80, 60, 40, "Content going viral", 1.5),
+    "viral": LoadPattern("🔥 Viral Content", 25, 60, 40, 25, "Content going viral", 1.5),
     "maintenance": LoadPattern("🌙 Low Traffic", 10, 2, 1, 1, "Maintenance window"),
-    "enterprise": LoadPattern("🏆 Enterprise Priority", 30, 50, 20, 8, "Enterprise gets priority scaling", 2.5),
+    "enterprise": LoadPattern("🏆 Enterprise Priority", 30, 40, 18, 8, "Enterprise gets priority scaling", 2.0),
 }
 
 class Colors:
@@ -68,8 +68,8 @@ class HackathonLoadGenerator:
         
         # Auto-approval settings for governance demo
         self.auto_approve_enabled = True
-        self.approval_interval = 2.0  # Check every 2 seconds
-        self.approval_delay = 2.0     # Wait 2 seconds before auto-approving
+        self.approval_interval = 0.5  # Check every 0.5 seconds for responsive demo
+        self.approval_delay = 0.5     # Wait 0.5 seconds before auto-approving
         self.last_approval_check = 0
         
         # Handle Ctrl+C gracefully

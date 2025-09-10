@@ -3,9 +3,9 @@
   "title": "🤖 AI Rate Limiter - Hackathon Demo",
   "tags": ["ai", "rate-limiting", "hackathon", "ollama"],
   "timezone": "browser",
-  "refresh": "1s",
+  "refresh": "500ms",
   "time": {
-    "from": "now-5m",
+    "from": "now-2m",
     "to": "now"
   },
     "panels": [
@@ -134,13 +134,17 @@
       },
       {
         "id": 5,
-        "title": "🏆 Governance Queue",
-        "description": "Pending AI decisions requiring approval. Shows governance in action for large changes (>2x rate limit)",
-        "type": "stat",
+        "title": "🏆 Governance Queue (Auto-Approved)",
+        "description": "Pending AI decisions requiring approval. Auto-approved after 0.5s for demo flow. Shows governance for large changes (>2x rate limit)",
+        "type": "timeseries",
         "targets": [
           {
             "expr": "rl_governance_queue_size",
-            "legendFormat": "Pending Decisions"
+            "legendFormat": "Queue Size"
+          },
+          {
+            "expr": "rate(rl_ai_decisions_total{applied=\"true\"}[30s]) * 60",
+            "legendFormat": "Auto-Approvals/min"
           }
         ],
         "fieldConfig": {

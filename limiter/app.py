@@ -27,7 +27,7 @@ PORT = int(os.getenv("PORT", "8080"))
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://backend:8000")
 DECISION_MIN_CONF = float(os.getenv("DECISION_MIN_CONF", "0.6"))
 HEURISTIC_EVERY_SEC = float(os.getenv("HEURISTIC_EVERY_SEC", "1.5"))  # DEMO: Faster analysis for more AI calls
-LARGE_CHANGE_FACTOR = float(os.getenv("LARGE_CHANGE_FACTOR", "1.5"))  # DEMO: Changes > 1.5x go to governance for more governance events
+LARGE_CHANGE_FACTOR = float(os.getenv("LARGE_CHANGE_FACTOR", "2.0"))  # DEMO: Changes > 2x go to governance for proper demo balance
 
 # Customer tiers and revenue
 REVENUE_PER_REQUEST = {
@@ -121,6 +121,10 @@ stats: Dict[Tuple[str,str], Dict[str, float]] = {}
 pending_decisions: Dict[str, Dict[str, Any]] = {}
 decision_history: List[Dict[str, Any]] = []
 state_lock = threading.Lock()
+
+# Demo auto-approval settings
+DEMO_AUTO_APPROVAL = True
+DEMO_APPROVAL_DELAY = 0.5  # Auto-approve after 0.5 seconds for smooth demo flow
 
 # surge tracking state
 surge_history: Dict[Tuple[str,str], List[Dict[str, float]]] = {}
@@ -261,6 +265,56 @@ def _update_system_health():
     except Exception as e:
         logger.warning(f"System health update error: {e}")
 
+def _auto_approval_loop():
+    """Auto-approve governance decisions after delay for smooth demo experience"""
+    while True:
+        try:
+            time.sleep(0.1)  # Check frequently
+            
+            if not DEMO_AUTO_APPROVAL:
+                continue
+                
+            now = _now()
+            decisions_to_approve = []
+            
+            with state_lock:
+                for decision_id, decision in pending_decisions.items():
+                    # Auto-approve after delay
+                    if now - decision["created"] >= DEMO_APPROVAL_DELAY:
+                        decisions_to_approve.append(decision_id)
+            
+            # Apply auto-approved decisions
+            for decision_id in decisions_to_approve:
+                with state_lock:
+                    if decision_id in pending_decisions:
+                        decision = pending_decisions.pop(decision_id)
+                        
+                        # Apply the decision
+                        apply_policy(
+                            decision["tenant"],
+                            decision["endpoint"], 
+                            decision["new_rps"],
+                            decision["new_burst"]
+                        )
+                        
+                        # Update metrics
+                        RL_AI_DECISIONS_TOTAL.labels(
+                            decision["tenant"], 
+                            decision["endpoint"],
+                            decision["action"],
+                            "true"  # applied=true
+                        ).inc()
+                        
+                        logger.info(f"✅ AUTO-APPROVED: {decision['tenant']}/{decision['endpoint']} - {decision['new_rps']:.1f} RPS (after {DEMO_APPROVAL_DELAY}s)")
+                        _track_log_entry("INFO", "policy_applied", decision["tenant"])
+                        
+                        # Update governance queue size
+                        RL_GOVERNANCE_QUEUE_SIZE.set(len(pending_decisions))
+                        
+        except Exception as e:
+            logger.error(f"Auto-approval error: {e}")
+            time.sleep(1)
+
 def _classify_traffic_scenario(tenant: str, ok_rps: float, blocked_ratio: float, utilization: float) -> str:
     """Classify traffic scenarios for different scaling approaches"""
     business_priority = _calculate_business_priority(tenant)
@@ -299,26 +353,26 @@ def _call_ollama_ai(tenant: str, endpoint: str, ok_rps: float, blocked_ratio: fl
     # Classify traffic scenario
     scenario = _classify_traffic_scenario(tenant, ok_rps, blocked_ratio, utilization)
     
-    # SIMPLIFIED prompt for better JSON parsing
-    prompt = f"""You are an AI rate limiter. Analyze this traffic and return ONLY valid JSON.
+    # OPTIMIZED prompt for clean JSON parsing
+    prompt = f"""Analyze traffic and respond with valid JSON only. No explanations, no markdown.
 
-CUSTOMER: {tenant.upper()}
-REVENUE: ${revenue_per_req:.3f} per request  
-CURRENT LIMIT: {current_policy["rps"]:.1f} RPS
-ACTUAL TRAFFIC: {ok_rps:.2f} RPS
+TENANT: {tenant.upper()}
+REVENUE: ${revenue_per_req:.3f}/request  
+LIMIT: {current_policy["rps"]:.1f} RPS
+TRAFFIC: {ok_rps:.2f} RPS
 BLOCKED: {blocked_ratio:.1%}
 SCENARIO: {scenario}
 
-RULES:
-- Enterprise customers: Scale aggressively (up to 100 RPS)
-- Pro customers: Scale moderately (up to 50 RPS)  
-- Free customers: Scale conservatively (up to 15 RPS)
-- If utilization > 80%: scale up
-- If utilization < 30%: scale down or maintain
-- If blocked_ratio > 20%: scale up immediately
+SCALING RULES:
+- Enterprise: up to 100 RPS
+- Pro: up to 50 RPS  
+- Free: up to 15 RPS
+- High utilization (>80%): scale up
+- Low utilization (<30%): maintain/down
+- High blocking (>20%): scale up immediately
 
-Return ONLY this JSON format:
-{{"action": "up", "new_rps": 25.0, "new_burst": 75, "confidence": 0.85, "reason": "{scenario}_scaling_needed"}}"""
+Respond with JSON only:
+{{"action": "up", "new_rps": 25.0, "new_burst": 75, "confidence": 0.85, "reason": "{scenario}_scaling"}}"""
 
     # Track prompt tokens (simplified)
     prompt_tokens = len(prompt.split())
@@ -377,15 +431,35 @@ Return ONLY this JSON format:
                 _track_log_entry("INFO", "ai_response", tenant)
                 RL_AI_CALLS_TOTAL.labels("success").inc()
                 
-                # IMPROVED JSON parsing
+                # ENHANCED JSON parsing for AI responses
                 try:
+                    import re
+                    
+                    # Clean the response first - remove markdown and extra text
+                    cleaned_response = ai_response.strip()
+                    
+                    # Remove markdown code blocks
+                    cleaned_response = re.sub(r'```[a-zA-Z]*\s*', '', cleaned_response)
+                    cleaned_response = re.sub(r'```\s*', '', cleaned_response)
+                    
+                    # Remove leading text like "Here is the valid JSON output:"
+                    cleaned_response = re.sub(r'^.*?(?=\{)', '', cleaned_response, flags=re.DOTALL)
+                    
                     # Try direct JSON parse first
-                    if ai_response.startswith("{") and ai_response.endswith("}"):
-                        result = json.loads(ai_response)
+                    if cleaned_response.startswith("{"):
+                        # Handle incomplete JSON - try to fix common issues
+                        if not cleaned_response.endswith("}"):
+                            # Find the last complete key-value pair and close the JSON
+                            if '"reason":' in cleaned_response:
+                                # Find the end of the reason value and close JSON
+                                match = re.search(r'"reason":\s*"[^"]*"', cleaned_response)
+                                if match:
+                                    cleaned_response = cleaned_response[:match.end()] + "}"
+                        
+                        result = json.loads(cleaned_response)
                     else:
-                        # Extract JSON with regex
-                        import re
-                        json_match = re.search(r'\{[^{}]*\}', ai_response)
+                        # Extract JSON with enhanced regex that handles nested structures
+                        json_match = re.search(r'\{[^{}]*(?:"[^"]*"[^{}]*)*\}', cleaned_response)
                         if json_match:
                             json_str = json_match.group()
                             result = json.loads(json_str)
@@ -864,8 +938,9 @@ def _heuristics_loop():
         # Update comprehensive system health metrics after processing all pairs
         _update_system_health()
 
-# Start background thread
+# Start background threads
 threading.Thread(target=_heuristics_loop, daemon=True).start()
+threading.Thread(target=_auto_approval_loop, daemon=True).start()
 
 # ------------------------------------------------------------------------------------
 # Flask App with Enhanced Routes (Same as before)
