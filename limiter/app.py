@@ -98,6 +98,19 @@ RL_SERVICE_ERROR_RATE = Gauge("rl_service_error_rate", "Error rate per service",
 RL_LOG_ENTRIES_TOTAL = Counter("rl_log_entries_total", "Total log entries", ["level", "service", "ai_type"])
 RL_AI_LOG_EVENTS = Counter("rl_ai_log_events_total", "AI-specific log events", ["event_type", "tenant"])
 
+# ADVANCED HACKATHON METRICS for impressive Grafana dashboard
+RL_AI_CONFIDENCE = Gauge("rl_ai_confidence_score", "AI decision confidence", ["tenant", "endpoint"])
+RL_SMART_FALLBACK_USAGE = Counter("rl_smart_fallback_total", "Smart fallback activations", ["tenant", "fallback_type"])
+RL_SYSTEM_HEALTH = Gauge("rl_system_health_score", "Overall system health", ["component"])
+RL_BUSINESS_IMPACT = Gauge("rl_business_impact_score", "Business impact metrics", ["tenant", "metric_type"])
+RL_REAL_TIME_RPS = Gauge("rl_real_time_rps", "Real-time request rate", ["tenant", "endpoint"])
+RL_ADAPTIVE_THRESHOLD = Gauge("rl_adaptive_threshold", "AI-computed adaptive thresholds", ["tenant", "endpoint", "threshold_type"])
+RL_PREDICTION_ACCURACY = Gauge("rl_prediction_accuracy", "AI prediction accuracy over time", ["tenant", "prediction_type"])
+RL_COST_OPTIMIZATION = Counter("rl_cost_optimization_total", "Cost optimization savings", ["tenant", "optimization_type"])
+RL_ALERT_SEVERITY = Gauge("rl_alert_severity", "Current alert severity levels", ["tenant", "alert_type"])
+RL_PERFORMANCE_SCORE = Gauge("rl_performance_score", "Overall performance score", ["tenant", "metric"])
+RL_AI_VS_STATIC_COMPARISON = Gauge("rl_ai_vs_static", "AI vs Static rate limiting comparison", ["tenant", "metric", "limiter_type"])
+
 
 # ------------------------------------------------------------------------------------
 # State
@@ -221,6 +234,32 @@ def _track_log_entry(level: str, ai_type: str = "general", tenant: str = "system
     
     if ai_type != "general":
         RL_AI_LOG_EVENTS.labels(event_type=ai_type, tenant=tenant).inc()
+
+def _update_system_health():
+    """Update comprehensive system health metrics for hackathon dashboard"""
+    try:
+        with state_lock:
+            # AI Engine health based on performance
+            ai_decisions_made = len(decision_history)
+            ai_health = min(1.0, ai_decisions_made / 10.0) if ai_decisions_made > 0 else 0.8
+            RL_SYSTEM_HEALTH.labels("ai_engine").set(ai_health)
+            
+            # Rate limiting health based on active policies  
+            total_policies = len(policies)
+            rl_health = min(1.0, total_policies / 6.0) if total_policies > 0 else 0.5
+            RL_SYSTEM_HEALTH.labels("rate_limiter").set(rl_health)
+            
+            # Governance health based on queue size
+            governance_load = len(pending_decisions)
+            governance_health = max(0.3, 1.0 - (governance_load / 10.0))
+            RL_SYSTEM_HEALTH.labels("governance").set(governance_health)
+            
+            # Overall system health (weighted average)
+            overall_health = (ai_health * 0.5 + rl_health * 0.3 + governance_health * 0.2)
+            RL_SYSTEM_HEALTH.labels("overall").set(overall_health)
+            
+    except Exception as e:
+        logger.warning(f"System health update error: {e}")
 
 def _classify_traffic_scenario(tenant: str, ok_rps: float, blocked_ratio: float, utilization: float) -> str:
     """Classify traffic scenarios for different scaling approaches"""
@@ -499,6 +538,12 @@ def _apply_or_queue(tenant, endpoint, action, new_rps, new_burst, confidence, re
         if confidence >= DECISION_MIN_CONF and not is_large and action != "same":
             apply_policy(tenant, endpoint, new_rps, new_burst)
             RL_AI_DECISIONS_TOTAL.labels(tenant, endpoint, action, "true").inc()
+            
+            # Track AI confidence and business metrics for hackathon dashboard
+            RL_AI_CONFIDENCE.labels(tenant, endpoint).set(confidence)
+            RL_ADAPTIVE_THRESHOLD.labels(tenant, endpoint, "rps").set(new_rps)
+            RL_ADAPTIVE_THRESHOLD.labels(tenant, endpoint, "burst").set(new_burst)
+            
             logger.info(f"✅ APPLIED: {tenant}/{endpoint} {old_rps:.1f}→{new_rps:.1f} RPS ({reason})")
             _track_log_entry("INFO", "policy_applied", tenant)  # ADD THIS
             
@@ -814,6 +859,9 @@ def _heuristics_loop():
             )
             
             logger.info(f"✅ AI DECISION RESULT: {tenant}/{endpoint} - {result}")
+        
+        # Update comprehensive system health metrics after processing all pairs
+        _update_system_health()
 
 # Start background thread
 threading.Thread(target=_heuristics_loop, daemon=True).start()
@@ -965,8 +1013,26 @@ def _handle_request(endpoint_path: str):
         allowed = _allow(pair)
         if allowed:
             stats[pair]["ok"] += 1
+            # Track real-time RPS for hackathon dashboard
+            window = max(1.0, _now() - stats[pair]["since"])
+            current_rps = stats[pair]["ok"] / window
+            RL_REAL_TIME_RPS.labels(tenant, endpoint_path).set(current_rps)
         else:
             stats[pair]["blocked"] += 1
+            
+        # Update system health metrics for impressive dashboard
+        _ensure_policy_and_bucket(pair)
+        total_req = stats[pair]["ok"] + stats[pair]["blocked"]
+        success_rate = stats[pair]["ok"] / max(total_req, 1)
+        
+        # Business impact calculation
+        revenue_rate = success_rate * REVENUE_PER_REQUEST.get(tenant, 0.01)
+        RL_BUSINESS_IMPACT.labels(tenant, "success_rate").set(success_rate)
+        RL_BUSINESS_IMPACT.labels(tenant, "revenue_rate").set(revenue_rate)
+        
+        # Performance score (combination of factors)
+        performance_score = success_rate * 0.7 + (1.0 - min(current_rps / 100, 1.0)) * 0.3
+        RL_PERFORMANCE_SCORE.labels(tenant, "overall").set(performance_score)
     
     if not allowed:
         duration = time.time() - start_time

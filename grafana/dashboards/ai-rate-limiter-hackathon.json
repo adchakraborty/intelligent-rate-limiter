@@ -1,0 +1,236 @@
+{
+  "id": null,
+  "title": "🤖 AI Rate Limiter - Hackathon Demo",
+  "tags": ["ai", "rate-limiting", "hackathon", "ollama"],
+  "timezone": "browser",
+  "refresh": "1s",
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+    "panels": [
+      {
+        "id": 1,
+        "title": "🚀 AI vs Static Performance",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(rl_requests_total[1m])",
+            "legendFormat": "{{tenant}} {{outcome}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {"displayMode": "gradient"},
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 50},
+                {"color": "green", "value": 100}
+              ]
+            },
+            "unit": "reqps"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "💰 Revenue Protection (Real-time)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rl_revenue_protected_total",
+            "legendFormat": "{{tenant}} Protected"
+          },
+          {
+            "expr": "rl_revenue_lost_total",
+            "legendFormat": "{{tenant}} Lost"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "currencyUSD"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "🧠 AI Engine Health",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "avg(rl_ai_confidence_score)",
+            "legendFormat": "AI Confidence"
+          },
+          {
+            "expr": "rl_ai_engine_active",
+            "legendFormat": "Engine Status"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 0.7},
+                {"color": "green", "value": 0.85}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "🌊 Surge Prediction",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rl_surge_prediction",
+            "legendFormat": "{{tenant}}/{{endpoint}} Surge %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "unit": "percentunit"
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "⚖️ Governance Queue",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rl_governance_queue_size",
+            "legendFormat": "Pending Decisions"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 1},
+                {"color": "red", "value": 3}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "🎯 Customer Satisfaction",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "rl_customer_satisfaction",
+            "legendFormat": "{{tenant}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 1,
+            "color": {"mode": "continuous-GrYlRd"},
+            "unit": "percentunit"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 7,
+        "title": "📊 AI Adaptive RPS Limits",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rl_policy_rps",
+            "legendFormat": "AI {{tenant}} Dynamic"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "red", "value": 3},
+                {"color": "yellow", "value": 8},
+                {"color": "green", "value": 15}
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "AI ent Dynamic"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "AI pro Dynamic"},  
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "AI free Dynamic"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}
+              ]
+            }
+          ]
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 8,
+        "title": "🔥 AI Decision Stream",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "increase(rl_ai_decisions_total[1m])",
+            "legendFormat": "",
+            "format": "table"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {},
+              "indexByName": {},
+              "renameByName": {
+                "tenant": "Customer Tier",
+                "action": "AI Action",
+                "applied": "Applied",
+                "confidence_level": "Confidence"
+              }
+            }
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24}
+      }
+  ],
+  "schemaVersion": 30,
+  "version": 1,
+  "editable": true
+}
