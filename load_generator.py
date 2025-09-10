@@ -248,10 +248,11 @@ class HackathonLoadGenerator:
         }
         
         async def request_scheduler(tenant: str, interval: float):
-            """Schedule requests for a specific tenant at target RPS"""
+            """Schedule requests for a specific tenant at target RPS with dashboard sync"""
             next_request_time = time.time()
             requests_sent = 0
             last_status_check = time.time()
+            last_progress_update = time.time()
             
             while self.running and (time.time() - start_time) < pattern.duration:
                 current_time = time.time()
@@ -261,15 +262,23 @@ class HackathonLoadGenerator:
                     await self.check_and_approve_decisions()
                     self.last_approval_check = current_time
                 
-                # Periodic system status check
-                if current_time - last_status_check > 10 and self.verbose:  # Every 10 seconds
+                # 📊 Dashboard-synced progress updates every 5 seconds
+                if current_time - last_progress_update > 5 and show_progress:
+                    elapsed = current_time - start_time
+                    remaining = pattern.duration - elapsed
+                    progress_pct = (elapsed / pattern.duration) * 100
+                    print(f"{Colors.CYAN}📊 Phase progress: {progress_pct:.0f}% | {remaining:.0f}s remaining | Dashboard updating...{Colors.END}")
+                    last_progress_update = current_time
+                
+                # Enhanced system status check with dashboard correlation
+                if current_time - last_status_check > 8 and self.verbose:  # Every 8 seconds for better sync
                     try:
                         async with self.session.get(f"{self.base_url}/health", timeout=aiohttp.ClientTimeout(total=2)) as health_resp:
                             if health_resp.status == 200:
                                 health_data = await health_resp.json()
                                 pending = health_data.get("pending_decisions", 0)
                                 policies = health_data.get("policies_active", 0)
-                                print(f"{Colors.BLUE}🎯 AI System: {policies} policies active, {pending} pending decisions{Colors.END}")
+                                print(f"{Colors.BLUE}🎯 AI Status: {policies} policies active, {pending} pending | Check Panel 3 & 5 on dashboard{Colors.END}")
                     except:
                         pass  # Ignore health check failures during load test
                     last_status_check = current_time
@@ -363,13 +372,15 @@ class HackathonLoadGenerator:
         print(f"{Colors.PURPLE}{'=' * 60}{Colors.END}")
         print(f"{Colors.WHITE}🎯 Showcasing AI vs Static Rate Limiting{Colors.END}")
         print(f"{Colors.WHITE}🚀 Real traffic → AI decisions → Revenue protection{Colors.END}")
-        print(f"{Colors.CYAN}⏱️  Duration: {duration_mins} minutes (perfect for judges!){Colors.END}\n")
+        print(f"{Colors.CYAN}⏱️  Duration: {duration_mins} minutes (perfect for judges!){Colors.END}")
+        print(f"{Colors.YELLOW}📊 Dashboard sync: 1s refresh rate for smooth visualization{Colors.END}\n")
         
         await self.start_session()
         
-        # Calculate timing for perfect 2-2.5 minute demo
+        # Calculate timing for perfect 2-2.5 minute demo with dashboard sync
         total_seconds = int(duration_mins * 60)
-        phase_duration = (total_seconds - 6) // 3  # Account for 2s cooldowns between phases
+        phase_duration = (total_seconds - 10) // 3  # Account for sync pauses between phases
+        transition_pause = 3  # Longer pause for dashboard to catch up
         
         try:
             # 🎬 OPTIMIZED 3-Act Demo Structure for Maximum Impact
@@ -387,31 +398,40 @@ class HackathonLoadGenerator:
             
             demo_start = time.time()
             
+            # 📊 Initial dashboard sync pause
+            print(f"{Colors.CYAN}📊 Syncing with Grafana dashboard (3s)...{Colors.END}")
+            await asyncio.sleep(3)
+            
             for i, (scenario_name, description) in enumerate(demo_sequence, 1):
                 if not self.running:
                     break
                 
                 phase_start = time.time()
                 print(f"\n{Colors.BOLD}{Colors.BLUE}🎬 {description}{Colors.END}")
+                print(f"{Colors.PURPLE}📊 Dashboard Phase {i}/3 - Check Grafana now!{Colors.END}")
                 
-                # Add narrative context for judges
+                # Add narrative context for judges with dashboard guidance
                 if i == 1:
-                    print(f"{Colors.WHITE}   👀 Watch: AI learning traffic patterns, establishing baselines{Colors.END}")
+                    print(f"{Colors.WHITE}   👀 Watch Dashboard: Panel 1 (traffic), Panel 3 (AI confidence), Panel 7 (adaptive limits){Colors.END}")
                 elif i == 2:
-                    print(f"{Colors.WHITE}   👀 Watch: AI detects surge, auto-scales limits, maintains service{Colors.END}")
+                    print(f"{Colors.WHITE}   👀 Watch Dashboard: Panel 4 (surge prediction), Panel 2 (revenue protection), Panel 7 (scaling){Colors.END}")
                 elif i == 3:
-                    print(f"{Colors.WHITE}   👀 Watch: Enterprise priority, governance approval, crisis management{Colors.END}")
+                    print(f"{Colors.WHITE}   👀 Watch Dashboard: Panel 5 (governance), Panel 6 (satisfaction), Panel 2 (max protection){Colors.END}")
+                
+                # 🎯 Phase countdown for perfect sync
+                print(f"{Colors.CYAN}⏱️  Phase {i} running for {phase_duration}s...{Colors.END}")
                 
                 await self.run_pattern(SCENARIOS[scenario_name], show_progress=False)
                 
-                # Real-time phase summary
+                # Real-time phase summary with dashboard correlation
                 phase_elapsed = time.time() - phase_start
-                print(f"{Colors.CYAN}✅ Phase {i} completed in {phase_elapsed:.1f}s{Colors.END}")
+                print(f"{Colors.GREEN}✅ Phase {i} completed in {phase_elapsed:.1f}s{Colors.END}")
+                print(f"{Colors.PURPLE}📊 Check dashboard for Phase {i} impact!{Colors.END}")
                 
-                # Quick transition between phases
+                # Dashboard sync transition between phases
                 if i < len(demo_sequence) and self.running:
-                    print(f"{Colors.YELLOW}⚡ Transitioning to next phase...{Colors.END}")
-                    await asyncio.sleep(2)
+                    print(f"{Colors.YELLOW}📊 Dashboard sync pause ({transition_pause}s) - metrics updating...{Colors.END}")
+                    await asyncio.sleep(transition_pause)
             
             # Restore original durations
             for scenario_name, original_duration in original_durations.items():
@@ -449,6 +469,29 @@ class HackathonLoadGenerator:
         except Exception as e:
             print(f"{Colors.RED}❌ Cannot reach rate limiter: {e}{Colors.END}")
             return False
+    
+    async def check_dashboard_sync(self):
+        """🎯 Validate dashboard synchronization setup"""
+        print(f"{Colors.CYAN}📊 Checking Grafana dashboard synchronization...{Colors.END}")
+        
+        # Check if Grafana is accessible
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get("http://localhost:3000", timeout=aiohttp.ClientTimeout(total=3)) as response:
+                    if response.status == 200:
+                        print(f"{Colors.GREEN}✅ Grafana dashboard accessible at http://localhost:3000{Colors.END}")
+                        print(f"{Colors.CYAN}📊 Dashboard settings:{Colors.END}")
+                        print(f"{Colors.WHITE}   • Refresh rate: 1 second (synced with demo phases){Colors.END}")
+                        print(f"{Colors.WHITE}   • Time window: Last 3 minutes (covers full demo){Colors.END}")
+                        print(f"{Colors.WHITE}   • Auto-refresh: Enabled for real-time updates{Colors.END}")
+                        return True
+                    else:
+                        print(f"{Colors.YELLOW}⚠️ Grafana returned status {response.status} - dashboard may not be ready{Colors.END}")
+                        return False
+        except Exception as e:
+            print(f"{Colors.YELLOW}⚠️ Cannot reach Grafana dashboard: {e}{Colors.END}")
+            print(f"{Colors.WHITE}💡 Start Grafana with: docker-compose up grafana{Colors.END}")
+            return False
 
 async def main():
     parser = argparse.ArgumentParser(description="🏆 Hackathon AI Rate Limiter Load Generator")
@@ -479,6 +522,11 @@ async def main():
     if not await generator.health_check():
         print(f"{Colors.RED}🚨 Cannot proceed - rate limiter is not accessible{Colors.END}")
         sys.exit(1)
+    
+    # Dashboard sync validation for demo modes
+    if args.demo or args.demo_short or args.demo_quick:
+        await generator.check_dashboard_sync()
+        print()  # Extra line for readability
     
     if args.demo:
         await generator.run_hackathon_demo(2.5)

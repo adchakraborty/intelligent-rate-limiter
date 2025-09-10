@@ -3,9 +3,9 @@
   "title": "🤖 AI Rate Limiter - Hackathon Demo",
   "tags": ["ai", "rate-limiting", "hackathon", "ollama"],
   "timezone": "browser",
-  "refresh": "500ms",
+  "refresh": "1s",
   "time": {
-    "from": "now-2m",
+    "from": "now-3m",
     "to": "now"
   },
     "panels": [
