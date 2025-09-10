@@ -85,11 +85,9 @@ class EnterprisePriorityDemo:
         print()
         
         demo_scenarios = [
-            ("startup", "🌅 Establishing baseline"),
             ("business", "📈 Normal operations"),
-            ("enterprise", "🏆 Enterprise priority scaling"),
-            ("viral", "🔥 Viral traffic surge"),
-            ("blackfriday", "🛒 Peak shopping event")
+            ("launch", "🚀 Product launch surge"),
+            ("blackfriday", "🛒 Peak traffic with governance")
         ]
         
         for scenario, description in demo_scenarios:
@@ -118,8 +116,8 @@ class EnterprisePriorityDemo:
                 print(f"{Colors.RED}❌ Scenario error: {e}{Colors.END}")
             
             if self.running:
-                print(f"{Colors.CYAN}⏸️  Cooldown (5 seconds)...{Colors.END}")
-                time.sleep(5)
+                print(f"{Colors.CYAN}⏸️  Cooldown (2 seconds)...{Colors.END}")
+                time.sleep(2)
         
         # Demo completed
         if self.running:
@@ -141,11 +139,11 @@ class EnterprisePriorityDemo:
         
         # Keep auto-approver running for a bit longer
         if approver_proc and approver_proc.poll() is None:
-            print(f"\n{Colors.YELLOW}⏳ Keeping auto-approver running for 30 more seconds...{Colors.END}")
+            print(f"\n{Colors.YELLOW}⏳ Keeping auto-approver running for 10 more seconds...{Colors.END}")
             print(f"{Colors.WHITE}   (Press Ctrl+C to stop early){Colors.END}")
             
             try:
-                time.sleep(30)
+                time.sleep(10)
             except KeyboardInterrupt:
                 print(f"{Colors.YELLOW}🛑 Stopped by user{Colors.END}")
         

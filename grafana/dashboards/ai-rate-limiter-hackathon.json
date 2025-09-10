@@ -12,6 +12,7 @@
       {
         "id": 1,
         "title": "🚀 AI vs Static Performance",
+        "description": "Real-time request success rates showing AI's adaptive advantage over static rate limiting",
         "type": "stat",
         "targets": [
           {
@@ -61,6 +62,7 @@
       {
         "id": 2,
         "title": "💰 Revenue Protection (Real-time)",
+        "description": "Business impact: Revenue protected vs lost during traffic surges. AI prevents revenue loss by smart scaling",
         "type": "timeseries",
         "targets": [
           {
@@ -83,6 +85,7 @@
       {
         "id": 3,
         "title": "🧠 AI Engine Health",
+        "description": "AI decision confidence and engine status. High confidence (>85%) means reliable autonomous decisions",
         "type": "gauge",
         "targets": [
           {
@@ -112,6 +115,7 @@
       {
         "id": 4,
         "title": "🌊 Surge Prediction",
+        "description": "AI's predictive capability: Forecasts traffic surges before they happen (0-100% surge probability)",
         "type": "timeseries",
         "targets": [
           {
@@ -130,7 +134,8 @@
       },
       {
         "id": 5,
-        "title": "🏆 Enterprise Priority Queue",
+        "title": "🏆 Governance Queue",
+        "description": "Pending AI decisions requiring approval. Shows governance in action for large changes (>2x rate limit)",
         "type": "stat",
         "targets": [
           {
@@ -165,6 +170,7 @@
       {
         "id": 6,
         "title": "🎯 Customer Satisfaction",
+        "description": "Customer experience score by tier. AI maintains high satisfaction while protecting system resources",
         "type": "bargauge",
         "targets": [
           {
@@ -185,6 +191,7 @@
       {
         "id": 7,
         "title": "📊 AI Adaptive RPS Limits",
+        "description": "Shows how AI dynamically adjusts rate limits (15-60 RPS) based on real-time traffic patterns vs static limits",
         "type": "timeseries",
         "targets": [
           {
@@ -209,7 +216,9 @@
                 {"color": "yellow", "value": 8},
                 {"color": "green", "value": 15}
               ]
-            }
+            },
+            "min": 0,
+            "max": 80
           },
           "overrides": [
             {
@@ -233,108 +242,8 @@
           ]
         },
         "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
-      },
-      {
-        "id": 8,
-        "title": "🔥 AI Decision Stream",
-        "type": "table",
-        "targets": [
-          {
-            "expr": "increase(rl_ai_decisions_total[1m])",
-            "legendFormat": "",
-            "format": "table"
-          }
-        ],
-        "transformations": [
-          {
-            "id": "organize",
-            "options": {
-              "excludeByName": {},
-              "indexByName": {},
-              "renameByName": {
-                "tenant": "Customer Tier",
-                "action": "AI Action",
-                "applied": "Applied",
-                "confidence_level": "Confidence"
-              }
-            }
-          }
-        ],
-        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24}
-      },
-      {
-        "id": 9,
-        "title": "🏆 Enterprise Scaling Advantage",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "rl_policy_rps{tenant=\"ent\"}",
-            "legendFormat": "🏆 Enterprise Adaptive Limit"
-          },
-          {
-            "expr": "rl_policy_rps{tenant=\"pro\"}",
-            "legendFormat": "💼 Professional Limit"
-          },
-          {
-            "expr": "rl_policy_rps{tenant=\"free\"}",
-            "legendFormat": "🆓 Free Tier Limit"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "reqps",
-            "color": {"mode": "palette-classic"},
-            "custom": {
-              "lineWidth": 3,
-              "fillOpacity": 10,
-              "gradientMode": "scheme"
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"color": "transparent", "value": null},
-                {"color": "green", "value": 15}
-              ]
-            }
-          },
-          "overrides": [
-            {
-              "matcher": {"id": "byName", "options": "🏆 Enterprise Adaptive Limit"},
-              "properties": [
-                {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
-                {"id": "custom.lineWidth", "value": 4},
-                {"id": "custom.fillOpacity", "value": 20}
-              ]
-            },
-            {
-              "matcher": {"id": "byName", "options": "💼 Professional Limit"},
-              "properties": [
-                {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
-                {"id": "custom.lineWidth", "value": 2}
-              ]
-            },
-            {
-              "matcher": {"id": "byName", "options": "🆓 Free Tier Limit"},
-              "properties": [
-                {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
-                {"id": "custom.lineWidth", "value": 1}
-              ]
-            }
-          ]
-        },
-        "options": {
-          "tooltip": {
-            "mode": "multi",
-            "sort": "desc"
-          },
-          "legend": {
-            "displayMode": "visible",
-            "placement": "bottom",
-            "calcs": ["lastNotNull", "max"]
-          }
-        },
-        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32}
       }
+
   ],
   "schemaVersion": 30,
   "version": 1,

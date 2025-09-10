@@ -27,7 +27,7 @@ PORT = int(os.getenv("PORT", "8080"))
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://backend:8000")
 DECISION_MIN_CONF = float(os.getenv("DECISION_MIN_CONF", "0.6"))
 HEURISTIC_EVERY_SEC = float(os.getenv("HEURISTIC_EVERY_SEC", "3.0"))
-LARGE_CHANGE_FACTOR = float(os.getenv("LARGE_CHANGE_FACTOR", "1.8"))  # Lowered for more governance demos
+LARGE_CHANGE_FACTOR = float(os.getenv("LARGE_CHANGE_FACTOR", "2.0"))  # Only changes > 2x go to governance
 
 # Customer tiers and revenue
 REVENUE_PER_REQUEST = {
@@ -817,11 +817,11 @@ def _heuristics_loop():
             # Detect anomalies
             _detect_anomaly(tenant, endpoint, ok_rps)
             
-            # CRITICAL: Only call AI if there's ANY activity (lowered threshold for demo)
-            if total_requests < 0.01:  # FIXED: Skip only if virtually NO activity
+            # CRITICAL: Always call AI if there's ANY measurable activity (lowered threshold for demo)
+            if total_requests < 0.001:  # FIXED: Only skip if absolutely no activity (less than 1/1000 request)
                 continue
             
-            logger.info(f"🤖 AI CALL TRIGGERED: {tenant}/{endpoint} - {total_requests} requests, {ok_rps:.2f} RPS, util:{utilization:.1%}")
+            logger.info(f"🤖 AI CALL TRIGGERED: {tenant}/{endpoint} - {total_requests:.3f} requests, {ok_rps:.2f} RPS, util:{utilization:.1%}")
             
             # PURE AI DECISION - NO FALLBACK
             ai_raw = _call_ollama_ai(tenant, endpoint, ok_rps, blocked_ratio, utilization)
@@ -1013,15 +1013,17 @@ def _handle_request(endpoint_path: str):
         allowed = _allow(pair)
         if allowed:
             stats[pair]["ok"] += 1
-            # Track real-time RPS for hackathon dashboard
-            window = max(1.0, _now() - stats[pair]["since"])
-            current_rps = stats[pair]["ok"] / window
-            RL_REAL_TIME_RPS.labels(tenant, endpoint_path).set(current_rps)
         else:
             stats[pair]["blocked"] += 1
             
         # Update system health metrics for impressive dashboard
         _ensure_policy_and_bucket(pair)
+        
+        # Calculate current RPS for all cases (FIXED: moved outside if/else to avoid UnboundLocalError)
+        window = max(1.0, _now() - stats[pair]["since"])
+        current_rps = stats[pair]["ok"] / window
+        RL_REAL_TIME_RPS.labels(tenant, endpoint_path).set(current_rps)
+        
         total_req = stats[pair]["ok"] + stats[pair]["blocked"]
         success_rate = stats[pair]["ok"] / max(total_req, 1)
         

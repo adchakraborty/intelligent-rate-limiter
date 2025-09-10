@@ -25,16 +25,16 @@ class LoadPattern:
     description: str
     surge_factor: float = 1.0
 
-# 🎪 Hackathon demo scenarios
+# 🎪 Hackathon demo scenarios (2-minute demo total)
 SCENARIOS = {
-    "startup": LoadPattern("🌅 Morning Startup", 30, 5, 3, 2, "Light morning traffic"),
-    "business": LoadPattern("📈 Business Hours", 45, 15, 10, 5, "Normal operations"),
-    "launch": LoadPattern("🚀 Product Launch", 60, 35, 25, 15, "Product announcement surge"),
-    "blackfriday": LoadPattern("🛒 Black Friday", 90, 60, 40, 25, "Peak shopping event"),
-    "ddos": LoadPattern("⚡ DDoS Attack", 30, 100, 80, 50, "Simulated attack", 2.0),
-    "viral": LoadPattern("🔥 Viral Content", 45, 80, 60, 40, "Content going viral", 1.5),
-    "maintenance": LoadPattern("🌙 Low Traffic", 15, 2, 1, 1, "Maintenance window"),
-    "enterprise": LoadPattern("🏆 Enterprise Priority", 60, 50, 20, 8, "Enterprise gets priority scaling", 2.5),
+    "startup": LoadPattern("🌅 Morning Startup", 20, 5, 3, 2, "Light morning traffic"),
+    "business": LoadPattern("📈 Business Hours", 25, 15, 10, 5, "Normal operations"),
+    "launch": LoadPattern("🚀 Product Launch", 30, 35, 25, 15, "Product announcement surge"),
+    "blackfriday": LoadPattern("🛒 Black Friday", 25, 60, 40, 25, "Peak shopping event"),
+    "ddos": LoadPattern("⚡ DDoS Attack", 20, 100, 80, 50, "Simulated attack", 2.0),
+    "viral": LoadPattern("🔥 Viral Content", 25, 80, 60, 40, "Content going viral", 1.5),
+    "maintenance": LoadPattern("🌙 Low Traffic", 10, 2, 1, 1, "Maintenance window"),
+    "enterprise": LoadPattern("🏆 Enterprise Priority", 30, 50, 20, 8, "Enterprise gets priority scaling", 2.5),
 }
 
 class Colors:
@@ -69,6 +69,7 @@ class HackathonLoadGenerator:
         # Auto-approval settings for governance demo
         self.auto_approve_enabled = True
         self.approval_interval = 2.0  # Check every 2 seconds
+        self.approval_delay = 2.0     # Wait 2 seconds before auto-approving
         self.last_approval_check = 0
         
         # Handle Ctrl+C gracefully
@@ -141,7 +142,7 @@ class HackathonLoadGenerator:
             return 500
     
     async def check_and_approve_decisions(self):
-        """🏆 Auto-approve governance decisions to demonstrate enterprise priority"""
+        """🏆 Auto-approve governance decisions after delay to show the effect"""
         if not self.auto_approve_enabled or not self.running:
             return
             
@@ -153,18 +154,25 @@ class HackathonLoadGenerator:
                     pending = data.get("pending", [])
                     
                     if pending:
-                        # Sort by priority - enterprise first!
-                        enterprise_decisions = [d for d in pending if d.get("tenant") == "ent"]
-                        other_decisions = [d for d in pending if d.get("tenant") != "ent"]
+                        current_time = time.time()
                         
-                        # Approve enterprise decisions immediately
-                        for decision in enterprise_decisions:
-                            await self.approve_decision(decision["id"], "🏆 ENT-PRIORITY")
-                            self.stats["enterprise_prioritized"] += 1
+                        # Only auto-approve decisions that have been pending for the delay period
+                        for decision in pending:
+                            decision_age = current_time - decision.get("created", current_time)
+                            scaling_factor = decision.get("scaling_factor", 1.0)
                             
-                        # Approve a few other decisions to keep system flowing
-                        for decision in other_decisions[:2]:  # Limit non-enterprise approvals
-                            await self.approve_decision(decision["id"], "AUTO-FLOW")
+                            # Only approve if it's been pending for the delay AND it's a large change (>2x)
+                            if decision_age >= self.approval_delay and scaling_factor >= 2.0:
+                                tenant = decision.get("tenant", "unknown")
+                                reason = "🏆 ENT-AUTO" if tenant == "ent" else "AUTO-APPROVE"
+                                
+                                await self.approve_decision(decision["id"], reason)
+                                
+                                if tenant == "ent":
+                                    self.stats["enterprise_prioritized"] += 1
+                                    
+                                if self.verbose:
+                                    print(f"{Colors.CYAN}⏰ Auto-approved {scaling_factor:.1f}x scaling for {tenant} after {decision_age:.1f}s delay{Colors.END}")
                             
         except Exception as e:
             if self.verbose:
@@ -216,17 +224,23 @@ class HackathonLoadGenerator:
                     self.last_approval_check = current_time
                 
                 if current_time >= next_request_time:
-                    # Add some surge factor for dramatic effect
+                    # ALWAYS send requests to ensure AI threshold is met
+                    # Add surge factor for dramatic effect
                     surge_multiplier = 1.0
                     if pattern.surge_factor > 1.0:
                         # Gradual surge build-up
                         progress = (current_time - start_time) / pattern.duration
                         surge_multiplier = 1.0 + (pattern.surge_factor - 1.0) * progress
                     
-                    # Send request with slight randomization for realism
-                    if random.random() < surge_multiplier:
-                        task = asyncio.create_task(self.send_request(tenant))
-                        tasks.append(task)
+                    # Send base request ALWAYS (ensures AI threshold met)
+                    task = asyncio.create_task(self.send_request(tenant))
+                    tasks.append(task)
+                    requests_sent += 1
+                    
+                    # Send additional requests based on surge factor
+                    if surge_multiplier > 1.1 and random.random() < (surge_multiplier - 1.0):
+                        extra_task = asyncio.create_task(self.send_request(tenant))
+                        tasks.append(extra_task)
                         requests_sent += 1
                     
                     next_request_time += interval
@@ -302,13 +316,11 @@ class HackathonLoadGenerator:
         await self.start_session()
         
         try:
-            # Demo sequence designed for maximum impact
+            # Demo sequence designed for maximum impact (2-minute total)
             demo_sequence = [
-                ("startup", "Establishing baseline performance"),
                 ("business", "Normal business operations"), 
-                ("enterprise", "🏆 Enterprise priority scaling demonstration"),
-                ("launch", "Product launch creates demand surge"),
-                ("blackfriday", "Peak traffic - AI vs Static showdown!")
+                ("launch", "Product launch surge with AI scaling"),
+                ("blackfriday", "Peak traffic - AI governance in action!")
             ]
             
             for i, (scenario_name, description) in enumerate(demo_sequence, 1):
@@ -318,10 +330,10 @@ class HackathonLoadGenerator:
                 print(f"\n{Colors.BOLD}{Colors.BLUE}🎬 Phase {i}/{len(demo_sequence)}: {description}{Colors.END}")
                 await self.run_pattern(SCENARIOS[scenario_name])
                 
-                # Cool-down between phases (except last one)
+                # Short cool-down between phases (except last one)
                 if i < len(demo_sequence) and self.running:
-                    print(f"{Colors.YELLOW}⏸️  Cooling down for 5 seconds...{Colors.END}")
-                    await asyncio.sleep(5)
+                    print(f"{Colors.YELLOW}⏸️  Cooling down for 2 seconds...{Colors.END}")
+                    await asyncio.sleep(2)
             
             if self.running:
                 print(f"\n{Colors.BOLD}{Colors.GREEN}🏁 HACKATHON DEMO COMPLETE!{Colors.END}")

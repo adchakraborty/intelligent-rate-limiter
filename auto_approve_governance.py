@@ -24,6 +24,7 @@ class AutoGovernanceApprover:
     def __init__(self, base_url="http://localhost:8080", check_interval=1.5):
         self.base_url = base_url
         self.check_interval = check_interval
+        self.approval_delay = 2.0  # Wait 2 seconds before auto-approving
         self.running = True
         self.session = None
         self.stats = {
@@ -95,43 +96,39 @@ class AutoGovernanceApprover:
         return False
     
     async def process_pending_decisions(self):
-        """Process all pending decisions with enterprise priority"""
+        """Process pending decisions with delay to show governance effect"""
         pending = await self.get_pending_decisions()
         
         if not pending:
             return
         
         self.stats["total_checked"] += len(pending)
+        current_time = time.time()
         
         # Sort by priority: Enterprise first, then Pro, then Free
         priority_order = {"ent": 0, "pro": 1, "free": 2}
         pending_sorted = sorted(pending, key=lambda d: priority_order.get(d.get("tenant", "free"), 3))
         
-        print(f"{Colors.BOLD}📋 Processing {len(pending)} pending decisions...{Colors.END}")
+        approved_count = 0
         
-        # Approve decisions with different strategies per tier
+        # Only approve decisions that have been pending for the delay period
         for decision in pending_sorted:
+            decision_age = current_time - decision.get("created", current_time)
+            scaling_factor = decision.get("scaling_factor", 1.0)
             tenant = decision.get("tenant", "unknown")
             
-            # Enterprise: Auto-approve all decisions immediately
-            if tenant == "ent":
+            # Only approve large changes (>2x) after the delay period
+            if decision_age >= self.approval_delay and scaling_factor >= 2.0:
                 await self.approve_decision(decision)
-            
-            # Professional: Approve most decisions (90% chance)
-            elif tenant == "pro":
-                import random
-                if random.random() < 0.9:
-                    await self.approve_decision(decision)
-                else:
-                    print(f"{Colors.BLUE}⏸️  PRO decision queued for human review{Colors.END}")
-            
-            # Free: Approve some decisions (60% chance) 
-            elif tenant == "free":
-                import random
-                if random.random() < 0.6:
-                    await self.approve_decision(decision)
-                else:
-                    print(f"{Colors.YELLOW}⏸️  FREE decision requires manual approval{Colors.END}")
+                approved_count += 1
+            elif decision_age < self.approval_delay:
+                remaining_delay = self.approval_delay - decision_age
+                print(f"{Colors.YELLOW}⏳ {tenant.upper()} decision pending ({remaining_delay:.1f}s remaining){Colors.END}")
+            elif scaling_factor < 2.0:
+                print(f"{Colors.BLUE}ℹ️  {tenant.upper()} small change ({scaling_factor:.1f}x) - no approval needed{Colors.END}")
+        
+        if approved_count > 0:
+            print(f"{Colors.BOLD}📋 Auto-approved {approved_count} decisions after delay{Colors.END}")
     
     def print_stats(self):
         """Print approval statistics"""
