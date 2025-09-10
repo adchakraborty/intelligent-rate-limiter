@@ -51,73 +51,76 @@
           {
             "matcher": {"id": "byRegexp", "options": ".*ent.*Traffic.*"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
-              {"id": "custom.lineWidth", "value": 3},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#00D9FF"}},
+              {"id": "custom.lineWidth", "value": 4},
               {"id": "displayName", "value": "🏆 ENT Traffic"}
             ]
           },
           {
             "matcher": {"id": "byRegexp", "options": ".*pro.*Traffic.*"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
-              {"id": "custom.lineWidth", "value": 3},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FF6B35"}},
+              {"id": "custom.lineWidth", "value": 4},
               {"id": "displayName", "value": "💼 PRO Traffic"}
             ]
           },
           {
             "matcher": {"id": "byRegexp", "options": ".*free.*Traffic.*"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
-              {"id": "custom.lineWidth", "value": 3},
-              {"id": "displayName", "value": "� FREE Traffic"}
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FFBE0B"}},
+              {"id": "custom.lineWidth", "value": 4},
+              {"id": "displayName", "value": "🆓 FREE Traffic"}
             ]
           },
           {
             "matcher": {"id": "byRegexp", "options": "AI.*ent.*Limit"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "dark-green"}},
-              {"id": "custom.lineStyle", "value": {"dash": [10, 10]}},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#00B4D8"}},
+              {"id": "custom.lineStyle", "value": {"dash": [15, 5]}},
+              {"id": "custom.lineWidth", "value": 3},
               {"id": "displayName", "value": "🤖 AI ENT Limit"}
             ]
           },
           {
             "matcher": {"id": "byRegexp", "options": "AI.*pro.*Limit"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "dark-blue"}},
-              {"id": "custom.lineStyle", "value": {"dash": [10, 10]}},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#E63946"}},
+              {"id": "custom.lineStyle", "value": {"dash": [15, 5]}},
+              {"id": "custom.lineWidth", "value": 3},
               {"id": "displayName", "value": "🤖 AI PRO Limit"}
             ]
           },
           {
             "matcher": {"id": "byRegexp", "options": "AI.*free.*Limit"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "dark-orange"}},
-              {"id": "custom.lineStyle", "value": {"dash": [10, 10]}},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FB8500"}},
+              {"id": "custom.lineStyle", "value": {"dash": [15, 5]}},
+              {"id": "custom.lineWidth", "value": 3},
               {"id": "displayName", "value": "🤖 AI FREE Limit"}
             ]
           },
           {
             "matcher": {"id": "byName", "options": "Static ENT Limit"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
-              {"id": "custom.lineStyle", "value": {"dash": [5, 5]}},
-              {"id": "custom.lineWidth", "value": 1}
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#8B5CF6"}},
+              {"id": "custom.lineStyle", "value": {"dash": [3, 3]}},
+              {"id": "custom.lineWidth", "value": 2}
             ]
           },
           {
             "matcher": {"id": "byName", "options": "Static PRO Limit"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
-              {"id": "custom.lineStyle", "value": {"dash": [5, 5]}},
-              {"id": "custom.lineWidth", "value": 1}
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#8B5CF6"}},
+              {"id": "custom.lineStyle", "value": {"dash": [3, 3]}},
+              {"id": "custom.lineWidth", "value": 2}
             ]
           },
           {
             "matcher": {"id": "byName", "options": "Static FREE Limit"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
-              {"id": "custom.lineStyle", "value": {"dash": [5, 5]}},
-              {"id": "custom.lineWidth", "value": 1}
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#8B5CF6"}},
+              {"id": "custom.lineStyle", "value": {"dash": [3, 3]}},
+              {"id": "custom.lineWidth", "value": 2}
             ]
           }
         ]
@@ -173,21 +176,21 @@
           {
             "matcher": {"id": "byRegexp", "options": ".*ent.*"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#00D9FF"}},
               {"id": "displayName", "value": "🏆 ENT Surge"}
             ]
           },
           {
             "matcher": {"id": "byRegexp", "options": ".*pro.*"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FF6B35"}},
               {"id": "displayName", "value": "💼 PRO Surge"}
             ]
           },
           {
             "matcher": {"id": "byRegexp", "options": ".*free.*"},
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FFBE0B"}},
               {"id": "displayName", "value": "🆓 FREE Surge"}
             ]
           }
@@ -212,12 +215,8 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "displayMode": "basic"
-          },
+          "color": {"mode": "palette-classic"},
+          "custom": {"displayMode": "basic"},
           "unit": "short"
         },
         "overrides": [
@@ -247,8 +246,8 @@
     },
     {
       "id": 5,
-      "title": "📊 Current RPS: AI vs Static Comparison",
-      "description": "Real-time RPS comparison table - shows AI advantage over static limits",
+      "title": "📊 Current RPS: AI vs Static Kong Comparison",
+      "description": "Real-time RPS comparison table - Current Traffic, AI Limits, and Static Kong Limits",
       "type": "table",
       "targets": [
         {
@@ -276,7 +275,7 @@
           {
             "matcher": {"id": "byName", "options": "Tenant"},
             "properties": [
-              {"id": "custom.width", "value": 120},
+              {"id": "custom.width", "value": 140},
               {"id": "mappings", "value": [
                 {"options": {"ent": {"text": "🏆 Enterprise"}}, "type": "value"},
                 {"options": {"pro": {"text": "💼 Professional"}}, "type": "value"},
@@ -285,24 +284,27 @@
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "Current Traffic"},
+            "matcher": {"id": "byName", "options": "Current RPS"},
             "properties": [
-              {"id": "custom.width", "value": 130},
-              {"id": "color", "value": {"mode": "continuous-GrYlRd"}}
+              {"id": "custom.width", "value": 120},
+              {"id": "color", "value": {"mode": "continuous-GrYlRd"}},
+              {"id": "custom.displayMode", "value": "color-background"}
             ]
           },
           {
             "matcher": {"id": "byName", "options": "AI Limit"},
             "properties": [
               {"id": "custom.width", "value": 100},
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#00D9FF"}},
+              {"id": "custom.displayMode", "value": "color-background"}
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "Static Limit"},
+            "matcher": {"id": "byName", "options": "Static Kong Limit"},
             "properties": [
-              {"id": "custom.width", "value": 110},
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}
+              {"id": "custom.width", "value": 140},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#8B5CF6"}},
+              {"id": "custom.displayMode", "value": "color-background"}
             ]
           }
         ]
@@ -321,10 +323,9 @@
               "job": true,
               "instance": true
             },
-            "indexByName": {},
             "renameByName": {
               "tenant": "Tenant",
-              "Value #A": "Current Traffic",
+              "Value #A": "Current RPS",
               "Value #B": "AI Limit"
             }
           }
@@ -332,16 +333,13 @@
         {
           "id": "calculateField",
           "options": {
-            "alias": "Static Limit",
+            "alias": "Static Kong Limit",
+            "mode": "binary",
             "binary": {
               "left": "Tenant",
-              "operator": "==",
               "reducer": "sum",
-              "right": "ent"
-            },
-            "mode": "binary",
-            "reduce": {
-              "reducer": "sum"
+              "operator": "*",
+              "right": "0"
             },
             "replaceFields": false
           }
