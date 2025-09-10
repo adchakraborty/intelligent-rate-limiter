@@ -1,0 +1,187 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "loki", "uid": "loki-uid"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+      "id": 1,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki-uid"},
+          "expr": "{service=\"ai-rate-limiter\"} |= \"OLLAMA_\"",
+          "refId": "A"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki-uid"},
+          "expr": "{container_name=\"limiter\"} |= \"OLLAMA_\"",
+          "refId": "B"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki-uid"},
+          "expr": "{job=\"docker-logs\"} |= \"OLLAMA_\"",
+          "refId": "C"
+        }
+      ],
+      "title": "🤖 ALL OLLAMA Events (Multi-Query)",
+      "type": "logs"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki-uid"},
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 8},
+      "id": 2,
+      "type": "logs",
+      "title": "📤 OLLAMA Requests", 
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki-uid"},
+          "expr": "{service=\"ai-rate-limiter\"} |= \"OLLAMA_REQUEST\"",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki-uid"},
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 8},
+      "id": 3,
+      "type": "logs",
+      "title": "📥 OLLAMA Responses",
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki-uid"},
+          "expr": "{service=\"ai-rate-limiter\"} |= \"OLLAMA_RESPONSE\"",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki-uid"},
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 14},
+      "id": 4,
+      "type": "logs",
+      "title": "❌ OLLAMA Errors & Issues",
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki-uid"},
+          "expr": "{service=\"ai-rate-limiter\"} |~ \"OLLAMA_(PARSE_ERROR|TIMEOUT|HTTP_ERROR|EXCEPTION|FAILED)\"",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki-uid"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
+      "id": 5,
+      "type": "logs",
+      "title": "🔍 ALL Limiter Logs (Debug)",
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki-uid"},
+          "expr": "{service=\"ai-rate-limiter\"}",
+          "refId": "A"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki-uid"},
+          "expr": "{container_name=\"limiter\"}",
+          "refId": "B"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki-uid"},
+          "expr": "{job=\"docker-logs\"}",
+          "refId": "C"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki-uid"},
+          "expr": "{job=\"limiter-direct\"}",
+          "refId": "D"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["logs", "ai", "ollama", "loki"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "🤖 OLLAMA API Call Monitor",
+  "uid": "ollama-calls",
+  "version": 4,
+  "weekStart": ""
+}

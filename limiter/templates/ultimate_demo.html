@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="en" data-version="1.2.0">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI vs Static Rate Limiter Demo</title>
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Demonstration of AI-driven, business-aware dynamic rate limiting vs static limits." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" defer></script>
+
+    <style>
+        :root {
+            --c-bg: #0f172a;
+            --c-bg-alt: #1e293b;
+            --c-panel: rgba(15,23,42,0.9);
+            --c-border: rgba(59,130,246,0.28);
+            --c-border-warn: rgba(245,158,11,0.35);
+            --c-border-accent: rgba(99,102,241,0.35);
+            --c-text: #f1f5f9;
+            --c-muted: #94a3b8;
+            --c-dim: #64748b;
+            --c-ai: #10b981;
+            --c-ai-accent: #06b6d4;
+            --c-static: #ef4444;
+            --c-pro: #06b6d4;
+            --c-ent: #8b5cf6;
+            --c-free: #64748b;
+            --radius-sm: 6px;
+            --radius: 10px;
+            --radius-lg: 14px;
+            --shadow: 0 4px 18px -4px rgba(0,0,0,0.45);
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --focus-outline: 2px solid #3b82f6;
+            --grad-accent: linear-gradient(135deg,#3b82f6,#06b6d4,#10b981);
+        }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        html,body { height:100%; }
+        body {
+            font-family: var(--font-sans);
+            background: radial-gradient(circle at 20% 25%, #12263d, #0f172a 55%);
+            color: var(--c-text);
+            line-height: 1.4;
+            overflow: hidden;
+        }
+        body.body--professional .dramatic { /* tone softener */
+            color: var(--c-muted) !important;
+            text-shadow:none !important;
+        }
+        body.body--professional .dramatic[data-alt]::after {
+            content: " (" attr(data-alt) ")";
+            font-weight:400;
+            color: var(--c-dim);
+            font-size: 0.65rem;
+            margin-left:4px;
+        }
+
+        /* Layout */
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            grid-template-rows: auto 1fr auto;
+            gap: 12px;
+            height: 100vh;
+            padding: 12px;
+        }
+        header.hero {
+            grid-column: 1 / -1;
+            background: var(--c-panel);
+            border:1px solid var(--c-border);
+            border-radius: var(--radius-lg);
+            text-align:center;
+            padding: 16px 18px 14px;
+            backdrop-filter: blur(18px);
+            position: relative;
+        }
+        .hero h1 {
+            font-size: 2.05rem;
+            background: var(--grad-accent);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            margin-bottom: 6px;
+            font-weight: 700;
+            letter-spacing: .5px;
+        }
+        .hero p {
+            font-size: .95rem;
+            color: var(--c-muted);
+            font-weight: 500;
+        }
+
+        main {
+            display:grid;
+            grid-template-rows: 190px 1fr;
+            gap: 12px;
+            min-height:0;
+        }
+
+        /* System Compare Cards */
+        .arena {
+            display:grid;
+            grid-template-columns: 1fr 64px 1fr;
+            gap: 18px;
+            align-items: center;
+            isolation:isolate;
+        }
+        .system-card {
+            background: var(--c-panel);
+            border:2px solid var(--c-border);
+            border-radius: var(--radius-lg);
+            position: relative;
+            padding: 14px 14px 12px;
+            display:flex;
+            flex-direction:column;
+            justify-content:space-between;
+            min-height:180px;
+            box-shadow: var(--shadow);
+        }
+        .system-card.static { border-color: var(--c-static); }
+        .system-card.ai { border-color: var(--c-ai); }
+        .system-header {
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:4px;
+            margin-bottom:4px;
+        }
+        .system-header .icon {
+            font-size:2.15rem;
+            line-height:1;
+        }
+        .system-title {
+            font-size:1.05rem;
+            font-weight:600;
+            letter-spacing:.5px;
+        }
+        .system-card.static .system-title { color: var(--c-static); }
+        .system-card.ai .system-title { color: var(--c-ai); }
+        .system-subtitle {
+            font-size:.68rem;
+            color: var(--c-dim);
+            font-weight:500;
+            text-transform:uppercase;
+            letter-spacing:.12em;
+        }
+
+        .metric-grid {
+            display:grid;
+            grid-template-columns: repeat(4,1fr);
+            gap:6px;
+            font-size:.7rem;
+            align-content:start;
+        }
+        .metric {
+            background: rgba(0,0,0,0.28);
+            border:1px solid rgba(255,255,255,0.08);
+            padding:6px 4px 4px;
+            text-align:center;
+            border-radius: var(--radius-sm);
+        }
+        .metric-label {
+            color: var(--c-muted);
+            font-size:.55rem;
+            font-weight:600;
+            letter-spacing:.05em;
+            margin-bottom:2px;
+            text-transform:uppercase;
+        }
+        .metric-value {
+            font-family: var(--font-mono);
+            font-weight:700;
+            font-size:.8rem;
+            line-height:1.1;
+        }
+        .metric.revenue .metric-value { font-size:.92rem; }
+
+        .system-card.ai .metric.revenue .metric-value {
+            color: var(--c-ai);
+            text-shadow:0 0 8px rgba(16,185,129,.35);
+        }
+        .system-card.static .metric.revenue .metric-value {
+            color: var(--c-static);
+            text-shadow:0 0 8px rgba(239,68,68,.35);
+        }
+
+        .vs-divider {
+            text-align:center;
+            font-weight:800;
+            font-size:1.8rem;
+            color:#f59e0b;
+            user-select:none;
+            font-family: var(--font-mono);
+        }
+
+        /* Traffic mini-visual */
+        .traffic-bar {
+            position:absolute;
+            top:6px;
+            right:6px;
+            width:92px;
+            height:18px;
+            display:flex;
+            align-items:center;
+            padding:2px 3px;
+            background:rgba(0,0,0,0.37);
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:10px;
+            overflow:hidden;
+        }
+        .traffic-dots {
+            display:flex;
+            gap:1px;
+            animation: flow 3s linear infinite;
+        }
+        .dot {
+            width:5px;
+            height:5px;
+            border-radius:50%;
+            opacity:.85;
+        }
+        .dot.enterprise { background: var(--c-ent); box-shadow:0 0 4px var(--c-ent); }
+        .dot.professional { background: var(--c-pro); box-shadow:0 0 4px var(--c-pro); }
+        .dot.free { background: var(--c-free); box-shadow:0 0 4px var(--c-free); }
+        @keyframes flow {
+            from { transform:translateX(-24px); }
+            to { transform:translateX(100px); }
+        }
+
+        /* Chart Panel */
+        .chart-panel {
+            background: var(--c-panel);
+            border:1px solid var(--c-border);
+            border-radius: var(--radius-lg);
+            padding: 14px 16px 16px;
+            display:flex;
+            flex-direction:column;
+            min-height:0;
+            position:relative;
+        }
+        .chart-header { text-align:center; margin-bottom:6px; }
+        .chart-header h2 {
+            font-size:1.1rem;
+            font-weight:600;
+            color:#06b6d4;
+            letter-spacing:.5px;
+            margin-bottom:2px;
+        }
+        .chart-header p {
+            font-size:.7rem;
+            color: var(--c-muted);
+        }
+        .chart-wrapper {
+            position:relative;
+            flex:1;
+            min-height:140px;
+        }
+
+        /* Sidebar */
+        aside.sidebar {
+            display:grid;
+            grid-template-rows: minmax(0,1fr) minmax(0,0.7fr) minmax(0,0.85fr);
+            gap:12px;
+            min-height:0;
+        }
+
+        .panel {
+            background: var(--c-panel);
+            border:1px solid var(--c-border-warn);
+            border-radius: var(--radius-lg);
+            padding:14px 14px 10px;
+            display:flex;
+            flex-direction:column;
+            min-height:0;
+            position:relative;
+        }
+        .panel.alt-border { border-color: var(--c-border-accent); }
+        .panel h3 {
+            font-size:.85rem;
+            font-weight:600;
+            letter-spacing:.06em;
+            color:#f59e0b;
+            display:flex;
+            align-items:center;
+            gap:6px;
+            margin-bottom:10px;
+            text-transform:uppercase;
+        }
+        .panel.alt-border h3 { color:#6366f1; }
+        .panel .body {
+            overflow-y:auto;
+            scrollbar-width:thin;
+            scrollbar-color:#3b82f6 transparent;
+        }
+        .panel .body::-webkit-scrollbar {
+            width:6px;
+        }
+        .panel .body::-webkit-scrollbar-thumb {
+            background:#3b82f6;
+            border-radius:3px;
+        }
+
+        /* Conversation */
+        .message {
+            margin-bottom:10px;
+            animation: fadeSlide .45s ease;
+        }
+        .msg-head {
+            display:flex;
+            align-items:center;
+            gap:8px;
+            margin-bottom:4px;
+        }
+        .avatar {
+            width:24px;
+            height:24px;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:.8rem;
+        }
+        .ai .avatar { background: linear-gradient(135deg,#10b981,#06b6d4); }
+        .static .avatar { background: linear-gradient(135deg,#ef4444,#dc2626); }
+        .name {
+            font-size:.7rem;
+            font-weight:600;
+            letter-spacing:.06em;
+        }
+        .ai .name { color: var(--c-ai); }
+        .static .name { color: var(--c-static); }
+        .bubble {
+            background: rgba(16,185,129,0.1);
+            border-left:3px solid var(--c-ai);
+            padding:7px 10px;
+            border-radius:0 8px 8px 0;
+            font-size:.72rem;
+            line-height:1.35;
+        }
+        .static .bubble {
+            background: rgba(239,68,68,0.1);
+            border-left-color: var(--c-static);
+            color:#fca5a5;
+        }
+
+        /* Narrative */
+        .narrative-item {
+            background: rgba(99,102,241,0.12);
+            border-left:3px solid #6366f1;
+            border-radius:0 8px 8px 0;
+            padding:6px 10px;
+            font-size:.7rem;
+            margin-bottom:8px;
+            line-height:1.4;
+            animation: fadeSlide .45s ease;
+        }
+
+        /* Prompt Stream */
+        .prompt-block {
+            font-family: var(--font-mono);
+            font-size:.62rem;
+            margin-bottom:10px;
+            animation: fadeSlide .45s ease;
+        }
+        .prompt-label {
+            color:#f59e0b;
+            font-weight:600;
+            margin-bottom:4px;
+            font-size:.6rem;
+        }
+        .prompt, .response {
+            background:rgba(0,0,0,0.3);
+            padding:6px 8px;
+            border-radius:6px;
+            white-space:pre-wrap;
+            word-break:break-word;
+            line-height:1.35;
+        }
+        .response {
+            margin-top:6px;
+            background:rgba(16,185,129,0.1);
+            border-left:3px solid var(--c-ai);
+            border-radius:0 6px 6px 0;
+            color:#a7f3d0;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            grid-column:1 / -1;
+            display:grid;
+            grid-template-columns: repeat(auto-fit,minmax(110px,1fr));
+            gap:8px;
+            background: rgba(15,23,42,0.82);
+            padding:8px;
+            border-radius: var(--radius);
+            border:1px solid rgba(59,130,246,0.22);
+        }
+        .status {
+            text-align:center;
+            padding:4px 4px 6px;
+        }
+        .status .icon {
+            display:block;
+            font-size:1rem;
+            margin-bottom:2px;
+        }
+        .status .val {
+            font-family: var(--font-mono);
+            font-size:.78rem;
+            font-weight:600;
+            color:#06b6d4;
+        }
+        .status .label {
+            font-size:.55rem;
+            color: var(--c-muted);
+            letter-spacing:.06em;
+            text-transform:uppercase;
+            margin-top:1px;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position:fixed;
+            top:76px;
+            right:18px;
+            background:rgba(15,23,42,0.92);
+            border:1px solid var(--c-border);
+            border-radius: var(--radius);
+            padding:10px 12px 12px;
+            z-index:1500;
+            display:flex;
+            flex-wrap:wrap;
+            gap:6px 12px;
+            width:310px;
+            font-size:.62rem;
+            backdrop-filter: blur(18px);
+        }
+        .control-panel h4 {
+            flex:1 1 100%;
+            margin:0 0 2px;
+            font-size:.65rem;
+            letter-spacing:.1em;
+            color:#38bdf8;
+            font-weight:600;
+            text-transform:uppercase;
+        }
+        .control-panel label {
+            display:flex;
+            align-items:center;
+            gap:4px;
+            cursor:pointer;
+            user-select:none;
+        }
+        .control-panel input[type=checkbox],
+        .control-panel select {
+            accent-color:#3b82f6;
+            background:#0f172a;
+            border:1px solid rgba(148,163,184,0.4);
+            color: var(--c-text);
+            padding:2px 4px;
+            border-radius:4px;
+            font-size:.6rem;
+        }
+        .control-panel .btn-row {
+            flex: 1 1 100%;
+            display:flex;
+            gap:6px;
+            margin-top:4px;
+        }
+        .btn {
+            background: linear-gradient(135deg,#3b82f6,#1d4ed8);
+            border:none;
+            padding:6px 10px;
+            color:#fff;
+            font-size:.65rem;
+            font-weight:600;
+            border-radius:6px;
+            cursor:pointer;
+            display:inline-flex;
+            align-items:center;
+            gap:4px;
+            transition:.25s;
+            box-shadow:0 2px 10px -3px rgba(59,130,246,.45);
+        }
+        .btn.primary { background: linear-gradient(135deg,#10b981,#059669); }
+        .btn.warning { background: linear-gradient(135deg,#f59e0b,#d97706); }
+        .btn.danger { background: linear-gradient(135deg,#ef4444,#dc2626); }
+        .btn.alt { background: linear-gradient(135deg,#6366f1,#4f46e5); }
+        .btn:disabled { opacity:.55; cursor:not-allowed; }
+        .btn:not(:disabled):hover { transform:translateY(-2px); }
+        .btn:not(:disabled):active { transform:translateY(0); }
+
+        /* Surge Alert */
+        .surge-alert {
+            position:fixed;
+            top:90px;
+            left:50%;
+            transform:translateX(-50%);
+            background:linear-gradient(135deg,#ef4444,#dc2626);
+            color:#fff;
+            padding:10px 18px;
+            border-radius:10px;
+            font-size:.75rem;
+            font-weight:600;
+            display:none;
+            z-index:1400;
+            box-shadow:0 4px 22px -6px rgba(239,68,68,.5);
+        }
+        .surge-alert.show { display:block; animation: fadeSlide .5s ease; }
+
+        /* Governance Modal */
+        .modal {
+            position:fixed;
+            inset:0;
+            display:none;
+            align-items:center;
+            justify-content:center;
+            background:rgba(0,0,0,0.55);
+            backdrop-filter: blur(8px);
+            z-index:2500;
+        }
+        .modal.active { display:flex; }
+        .modal-dialog {
+            background: linear-gradient(135deg,rgba(245,158,11,0.13),rgba(217,119,6,0.08));
+            border:1px solid #f59e0b;
+            border-radius:16px;
+            padding:20px 20px 18px;
+            width: clamp(280px, 70vw, 520px);
+            max-height:80vh;
+            display:flex;
+            flex-direction:column;
+            position:relative;
+        }
+        .modal-title {
+            font-size:1rem;
+            font-weight:600;
+            color:#f59e0b;
+            margin:0 0 14px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+        .gov-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+            gap:10px;
+            margin-bottom:14px;
+        }
+        .gov-item {
+            background:rgba(0,0,0,0.35);
+            border:1px solid rgba(255,255,255,0.08);
+            padding:8px 8px 6px;
+            border-radius:8px;
+            text-align:center;
+        }
+        .gov-item .lbl {
+            font-size:.55rem;
+            color: var(--c-muted);
+            letter-spacing:.06em;
+            text-transform:uppercase;
+            margin-bottom:2px;
+            font-weight:600;
+        }
+        .gov-item .val {
+            font-family: var(--font-mono);
+            font-size:.75rem;
+            font-weight:600;
+        }
+        .gov-actions {
+            display:flex;
+            gap:10px;
+            justify-content:center;
+            flex-wrap:wrap;
+            margin-top:4px;
+        }
+
+        /* KPI Overlay */
+        .kpi-overlay {
+            position:fixed;
+            inset:0;
+            background:rgba(15,23,42,0.92);
+            display:none;
+            z-index:2400;
+            padding:42px 36px 54px;
+            overflow:auto;
+        }
+        .kpi-overlay.show { display:block; animation: fade .4s ease; }
+        .kpi-overlay h2 {
+            font-size:1.35rem;
+            background:var(--grad-accent);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            margin:0 0 10px;
+        }
+        .kpi-overlay p.desc {
+            font-size:.75rem;
+            color: var(--c-muted);
+            max-width:760px;
+            line-height:1.4;
+        }
+        .kpi-grid {
+            display:grid;
+            gap:16px;
+            grid-template-columns: repeat(auto-fit,minmax(170px,1fr));
+            margin:24px 0 30px;
+        }
+        .kpi-card {
+            background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(16,185,129,0.09));
+            border:1px solid rgba(148,163,184,0.28);
+            border-radius:12px;
+            padding:14px 14px 12px;
+        }
+        .kpi-card h5 {
+            margin:0 0 6px;
+            font-size:.58rem;
+            letter-spacing:.1em;
+            color: var(--c-muted);
+            text-transform:uppercase;
+            font-weight:600;
+        }
+        .kpi-card .val {
+            font-family: var(--font-mono);
+            font-size:1.05rem;
+            font-weight:700;
+        }
+
+        /* Accessibility helpers */
+        .visually-hidden {
+            position:absolute;
+            width:1px;
+            height:1px;
+            margin:-1px;
+            border:0;
+            padding:0;
+            clip:rect(0 0 0 0);
+            overflow:hidden;
+            white-space:nowrap;
+        }
+
+        /* Animations */
+        @keyframes fadeSlide {
+            from { opacity:0; transform:translateY(6px); }
+            to { opacity:1; transform:translateY(0); }
+        }
+        @keyframes fade {
+            from { opacity:0; }
+            to { opacity:1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 1220px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+                height:auto;
+                min-height:100vh;
+            }
+            body { overflow:auto; }
+            aside.sidebar {
+                order:3;
+                grid-template-rows: repeat(3,minmax(0,1fr));
+            }
+            .control-panel {
+                position:static;
+                order:2;
+                width:100%;
+                margin:0 0 8px;
+            }
+            main { order:1; }
+        }
+        @media (max-width: 680px) {
+            .arena {
+                grid-template-columns: 1fr;
+                grid-template-rows:auto 40px auto;
+            }
+            .vs-divider { transform:rotate(0); font-size:1.4rem; }
+            .metric-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+            header.hero h1 { font-size:1.7rem; }
+            .control-panel { font-size:.7rem; }
+            .control-panel h4 { font-size:.7rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="hero" role="banner">
+        <h1>AI vs Static Rate Limiting</h1>
+        <p class="dramatic" data-alt="Adaptive vs static comparison">Business‑aware adaptive scaling vs fixed thresholds</p>
+    </header>
+
+    <!-- Control Panel -->
+    <section class="control-panel" aria-label="Demo controls">
+        <h4>Demo Controls</h4>
+        <label><input type="checkbox" id="chkConversation" checked /> Conversation</label>
+        <label><input type="checkbox" id="chkNarrative" checked /> Narrative</label>
+        <label><input type="checkbox" id="chkTechnical" checked /> Prompt Stream</label>
+        <label title="Reduces expressive wording"><input type="checkbox" id="chkProfessional" /> Professional Tone</label>
+        <label>
+            Speed
+            <select id="speedSelect">
+                <option value="1">1x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2">2x</option>
+            </select>
+        </label>
+        <div class="btn-row">
+            <button class="btn primary" id="btnStart" aria-label="Start demo (Alt+S)">▶ Start</button>
+            <button class="btn warning" id="btnPause" disabled aria-label="Pause demo (Space)">⏸ Pause</button>
+            <button class="btn" id="btnResume" disabled aria-label="Resume demo (Space)">▶ Resume</button>
+            <button class="btn danger" id="btnEnd" disabled aria-label="End demo early">■ End</button>
+        </div>
+        <div class="btn-row">
+            <button class="btn alt" id="btnExport" disabled>⬇ Export Log</button>
+            <button class="btn" id="btnSummary" disabled>📊 Summary</button>
+            <button class="btn" id="btnReset">🔄 Reset</button>
+        </div>
+        <div class="btn-row">
+            <button class="btn" id="btnTestOllama">🧪 Test OLLAMA</button>
+            <button class="btn" id="btnSimulateTraffic">🚗 Simulate Traffic</button>
+        </div>
+        <div style="flex:1 1 100%; font-size:.55rem; color:var(--c-dim); line-height:1.3; margin-top:2px;">
+            Shortcuts: Alt+S Start • Space Pause/Resume • P Tone • C Conversation • N Narrative • T Technical • Esc Close Modal
+        </div>
+    </section>
+
+    <div class="demo-grid" role="region" aria-label="Demo workspace">
+        <main>
+            <!-- Arena -->
+            <section class="arena" aria-label="System comparison">
+                <!-- Static Card -->
+                <article class="system-card static" aria-labelledby="staticTitle">
+                    <div class="traffic-bar" aria-hidden="true">
+                        <div class="traffic-dots" id="staticTrafficDots"></div>
+                    </div>
+                    <header class="system-header">
+                        <span class="icon" aria-hidden="true">🗿</span>
+                        <h2 id="staticTitle" class="system-title">Static Limiter</h2>
+                        <div class="system-subtitle">Fixed rules</div>
+                    </header>
+                    <div class="metric-grid">
+                        <div class="metric">
+                            <div class="metric-label">Enterprise</div>
+                            <div class="metric-value" id="staticEntRPS">15 RPS</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Professional</div>
+                            <div class="metric-value" id="staticProRPS">8 RPS</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Free</div>
+                            <div class="metric-value" id="staticFreeRPS">3 RPS</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Blocked</div>
+                            <div class="metric-value" id="staticBlocked">0%</div>
+                        </div>
+                        <div class="metric revenue">
+                            <div class="metric-label">Revenue Lost</div>
+                            <div class="metric-value" id="staticRevenueLost">$0/h</div>
+                        </div>
+                    </div>
+                </article>
+
+                <div class="vs-divider" aria-hidden="true">VS</div>
+
+                <!-- AI Card -->
+                <article class="system-card ai" aria-labelledby="aiTitle">
+                    <div class="traffic-bar" aria-hidden="true">
+                        <div class="traffic-dots" id="aiTrafficDots"></div>
+                    </div>
+                    <header class="system-header">
+                        <span class="icon" aria-hidden="true">🧠</span>
+                        <h2 id="aiTitle" class="system-title">AI Dynamic Limiter</h2>
+                        <div class="system-subtitle">Adaptive</div>
+                    </header>
+                    <div class="metric-grid">
+                        <div class="metric">
+                            <div class="metric-label">Enterprise</div>
+                            <div class="metric-value" id="aiEntRPS">15 RPS</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Professional</div>
+                            <div class="metric-value" id="aiProRPS">8 RPS</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Free</div>
+                            <div class="metric-value" id="aiFreeRPS">3 RPS</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Blocked</div>
+                            <div class="metric-value" id="aiBlocked">0%</div>
+                        </div>
+                        <div class="metric revenue">
+                            <div class="metric-label">Revenue Protected</div>
+                            <div class="metric-value" id="aiRevenueProtected">$0/h</div>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Chart -->
+            <section class="chart-panel" aria-label="Live performance chart">
+                <div class="chart-header">
+                    <h2>Adaptive vs Static Throughput</h2>
+                    <p class="dramatic" data-alt="Adaptive throughput vs static baseline" id="chartSubtitle">
+                        Watch dynamic scaling vs fixed baselines
+                    </p>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="battleChart" aria-label="Rate limits over time" role="img"></canvas>
+                    <div id="chartFallback" style="display:none; font-size:.75rem; color:var(--c-muted); text-align:center; margin-top:30px;">
+                        Chart library unavailable. Data points will not visualize, but metrics still update.
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" aria-label="Context panels">
+            <!-- Conversation -->
+            <section class="panel" id="panelConversation" aria-label="Conversation panel">
+                <h3><span aria-hidden="true">💬</span> Conversation</h3>
+                <div class="body" id="conversationBody" role="log" aria-live="polite" aria-label="AI and static system conversation stream">
+                    <!-- Messages injected -->
+                </div>
+            </section>
+
+            <!-- Narrative -->
+            <section class="panel alt-border" id="panelNarrative" aria-label="Narrative panel">
+                <h3><span aria-hidden="true">📖</span> Narrative</h3>
+                <div class="body" id="narrativeBody" role="log" aria-live="polite" aria-label="System narrative updates">
+                    <!-- Narratives injected -->
+                </div>
+            </section>
+
+            <!-- Prompt Stream -->
+            <section class="panel" id="panelTechnical" aria-label="Technical prompt stream">
+                <h3><span aria-hidden="true">🔬</span> AI Prompts</h3>
+                <div class="body" id="promptBody" role="log" aria-live="polite" aria-label="AI prompt and response stream">
+                    <div style="text-align:center; color:var(--c-dim); font-size:.62rem; padding:8px 4px;">
+                        Prompts & responses will appear when scaling decisions occur...
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Status Bar -->
+        <div class="status-bar" aria-label="Live operational metrics">
+            <div class="status">
+                <span class="icon" aria-hidden="true">🤖</span>
+                <div class="val" id="aiEngineStatus">READY</div>
+                <div class="label">AI Engine</div>
+            </div>
+            <div class="status">
+                <span class="icon" aria-hidden="true">🌊</span>
+                <div class="val" id="surgeStatus">0%</div>
+                <div class="label">Surge Prob</div>
+            </div>
+            <div class="status">
+                <span class="icon" aria-hidden="true">⚖️</span>
+                <div class="val" id="governanceStatus">ACTIVE</div>
+                <div class="label">Governance</div>
+            </div>
+            <div class="status">
+                <span class="icon" aria-hidden="true">💰</span>
+                <div class="val" id="totalRevenue">$0</div>
+                <div class="label">Revenue/hr</div>
+            </div>
+            <div class="status">
+                <span class="icon" aria-hidden="true">📊</span>
+                <div class="val" id="totalRPS">0</div>
+                <div class="label">Total RPS</div>
+            </div>
+            <div class="status">
+                <span class="icon" aria-hidden="true">⏱</span>
+                <div class="val" id="demoTimer">0:00</div>
+                <div class="label">Elapsed</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Surge Alert -->
+    <div class="surge-alert" id="surgeAlert" role="alert" aria-live="assertive">
+        Surge detected. Preemptive scaling engaged.
+    </div>
+
+    <!-- Governance Modal -->
+    <div class="modal" id="governanceModal" aria-modal="true" role="dialog" aria-labelledby="govTitle" aria-describedby="govDesc">
+        <div class="modal-dialog" role="document">
+            <h4 class="modal-title" id="govTitle">Scaling Approval Required</h4>
+            <p id="govDesc" style="font-size:.65rem; color:var(--c-muted); margin:-4px 0 12px;">
+                The AI recommends a scaling change exceeding the automated threshold. Review and approve or reject.
+            </p>
+            <div class="gov-grid" id="governanceDetails"></div>
+            <div class="gov-actions">
+                <button class="btn primary" id="btnGovApprove">✅ Approve</button>
+                <button class="btn danger" id="btnGovReject">❌ Reject</button>
+                <button class="btn" id="btnGovClose">✖ Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Overlay -->
+    <div class="kpi-overlay" id="kpiOverlay" aria-modal="true" role="dialog" aria-labelledby="kpiTitle">
+        <h2 id="kpiTitle">Session Summary</h2>
+        <p class="desc">
+            Collected performance indicators comparing adaptive versus static limits. Values represent sampled hourly projections during the run.
+        </p>
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn primary" id="btnExportSummary">Export JSON</button>
+            <button class="btn" id="btnCloseSummary">Close</button>
+        </div>
+    </div>
+
+    <!-- ARIA Live Region -->
+    <div class="visually-hidden" id="ariaLive" aria-live="polite"></div>
+
+    <script>
+        /***************
+         * State & Config
+         ***************/
+        const REVENUE_RATES = { enterprise:0.20, professional:0.05, free:0.01 };
+        const PHASES = [
+            { id:'init', t:0,    narrative:'Systems initialized. AI assessing tier revenue weighting; static limiter loaded with fixed thresholds.' },
+            { id:'baseline', t:5, narrative:'Baseline established. Revenue differential recognized (Enterprise > Free).' },
+            { id:'scale1', t:15, narrative:'AI scales Enterprise tier based on utilization threshold crossing.' },
+            { id:'scale2', t:25, narrative:'AI scales Professional tier in response to sustained demand pattern.' },
+            { id:'predict', t:35, narrative:'Elevated surge probability detected. Pre-scaling initiated.' },
+            { id:'surge', t:45, narrative:'Active surge. AI emergency scaling applied; static remains constrained.' },
+            { id:'govern', t:55, narrative:'Large scaling change requires governance review.' },
+            { id:'summary', t:70, narrative:'Demo complete. KPIs calculated.' }
+        ];
+        const CONVERSATION = [
+            { phase:'init', ai:'Ready. Business-aware baselines loaded.', static:'Configured: 15 / 8 / 3 RPS permanently.', narrative:null },
+            { phase:'baseline', ai:'Enterprise value per request recognized; priority weighting applied.', static:'All users equal. No differentiation.', narrative:null },
+            { phase:'scale1', ai:'Enterprise utilization elevated. Increasing limit to sustain throughput.', static:'Maintaining fixed limits.', narrative:null },
+            { phase:'scale2', ai:'Professional tier demand rising. Controlled scaling for balance.', static:'Unchanged configuration.', narrative:null },
+            { phase:'predict', ai:'Variance & acceleration indicate possible surge. Preparing capacity.', static:'No predictive model present.', narrative:null },
+            { phase:'surge', ai:'Surge active. Protective scaling safeguarding high-value calls.', static:'Throughput saturation occurring.', narrative:null },
+            { phase:'govern', ai:'Scaling factor exceeds autonomous threshold. Awaiting approval.', static:'No governance workflow implemented.', narrative:null },
+            { phase:'summary', ai:'Session complete. Summary available.', static:'Session ended with static baselines.', narrative:null }
+        ];
+
+        let chart;
+        let demoRunning = false;
+        let paused = false;
+        let speed = 1;
+        let startTime = null;
+        let timerHandle = null;
+        let metricsHandle = null;
+        let phaseHandleRefs = [];
+        let currentPhaseIndex = 0;
+        let pendingGovernance = null;
+        let conversationCount = 0;
+        let narrativeCount = 0;
+        let promptCount = 0;
+        let realMetricsMode = false;
+
+        const logData = {
+            version:'1.2.0',
+            phases:[],
+            prompts:[],
+            governance:[],
+            revenueSamples:[],
+            summary:null,
+            config:{ dynamicYAxis:true }
+        };
+
+        /***************
+         * DOM Helpers
+         ***************/
+        const $ = sel => document.querySelector(sel);
+        const live = msg => { const r = $('#ariaLive'); if(r) r.textContent = msg; };
+        const formatTime = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+        function toMoney(v){ return '$'+v.toLocaleString(); }
+
+        /***************
+         * Initialization
+         ***************/
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            initControls();
+            seedInitialMessages();
+        });
+
+        function initChart() {
+            const ctx = document.getElementById('battleChart');
+            if (!window.Chart || !ctx) {
+                document.getElementById('chartFallback').style.display = 'block';
+                return;
+            }
+            chart = new Chart(ctx, {
+                type:'line',
+                data:{
+                    labels:[],
+                    datasets:[
+                        ds('AI Enterprise', '#8b5cf6'),
+                        ds('AI Professional', '#06b6d4'),
+                        ds('AI Free', '#64748b'),
+                        ds('Static Enterprise', '#ef4444', true),
+                        ds('Static Professional', '#f59e0b', true),
+                        ds('Static Free', '#9ca3af', true)
+                    ]
+                },
+                options:{
+                    responsive:true,
+                    maintainAspectRatio:false,
+                    animation:{ duration:450 },
+                    plugins:{
+                        legend:{
+                            labels:{
+                                color:'#f1f5f9',
+                                font:{ size:11, weight:'500' },
+                                usePointStyle:true,
+                                pointStyle:'line'
+                            }
+                        },
+                        tooltip:{
+                            mode:'index',
+                            intersect:false
+                        }
+                    },
+                    interaction:{ mode:'index', intersect:false },
+                    scales:{
+                        x:{
+                            grid:{ color:'rgba(148,163,184,0.08)' },
+                            ticks:{ color:'#94a3b8', font:{ size:10 } }
+                        },
+                        y:{
+                            beginAtZero:true,
+                            max:60,
+                            grid:{ color:'rgba(148,163,184,0.08)' },
+                            ticks:{ color:'#94a3b8', font:{ size:10 } },
+                            title:{ display:true, text:'Requests / Second', color:'#94a3b8', font:{ size:11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function ds(label,color,dashed=false){
+            return {
+                label,
+                data:[],
+                borderColor:color,
+                backgroundColor:color+'33',
+                borderWidth:dashed?2:3,
+                borderDash:dashed?[8,4]:[],
+                pointRadius:0,
+                fill:false,
+                tension:.35
+            };
+        }
+
+        function seedInitialMessages() {
+            addConversation('AI System','Initialized. Revenue-per-tier logic ready.',true);
+            addConversation('Static System','Using permanent thresholds.',false,true);
+            addNarrative('System initialized. AI analyzing customer tiers, static limiter unchanged.');
+        }
+
+        /***************
+         * Control Binding
+         ***************/
+        function initControls() {
+            $('#btnStart').addEventListener('click', startDemo);
+            $('#btnPause').addEventListener('click', () => setPaused(true));
+            $('#btnResume').addEventListener('click', () => setPaused(false));
+            $('#btnEnd').addEventListener('click', () => endDemo(true));
+            $('#btnReset').addEventListener('click', resetDemo);
+            $('#btnExport').addEventListener('click', exportLog);
+            $('#btnSummary').addEventListener('click', showSummary);
+            $('#chkProfessional').addEventListener('change', e => toggleTone(e.target.checked));
+            $('#chkConversation').addEventListener('change', e => $('#panelConversation').style.display = e.target.checked?'flex':'none');
+            $('#chkNarrative').addEventListener('change', e => $('#panelNarrative').style.display = e.target.checked?'flex':'none');
+            $('#chkTechnical').addEventListener('change', e => $('#panelTechnical').style.display = e.target.checked?'flex':'none');
+            $('#speedSelect').addEventListener('change', e => speed = parseFloat(e.target.value));
+
+            // Governance modal buttons
+            $('#btnGovApprove').addEventListener('click', () => handleGovernanceDecision(true));
+            $('#btnGovReject').addEventListener('click', () => handleGovernanceDecision(false));
+            $('#btnGovClose').addEventListener('click', closeGovernance);
+
+            // KPI overlay
+            $('#btnCloseSummary').addEventListener('click', hideSummary);
+            $('#btnExportSummary').addEventListener('click', exportSummary);
+
+            // Test buttons
+            $('#btnTestOllama').addEventListener('click', testOllamaManual);
+            $('#btnSimulateTraffic').addEventListener('click', simulateTrafficManual);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', hotkeys);
+
+            // Attempt backend metrics mode
+            tryEnableRealMetrics();
+        }
+
+        function hotkeys(e){
+            if(e.altKey && e.key.toLowerCase()==='s'){ if(!demoRunning) startDemo(); }
+            if(e.key===' '){ if(demoRunning){ e.preventDefault(); setPaused(!paused); } }
+            if(e.key.toLowerCase()==='p'){ $('#chkProfessional').click(); }
+            if(e.key.toLowerCase()==='c'){ $('#chkConversation').click(); }
+            if(e.key.toLowerCase()==='n'){ $('#chkNarrative').click(); }
+            if(e.key.toLowerCase()==='t'){ $('#chkTechnical').click(); }
+            if(e.key==='Escape'){
+                if($('#governanceModal').classList.contains('active')) closeGovernance();
+                if($('#kpiOverlay').classList.contains('show')) hideSummary();
+            }
+        }
+
+        function toggleTone(on){
+            document.body.classList.toggle('body--professional', on);
+            live(on?'Professional tone enabled':'Expressive tone enabled');
+        }
+
+        /***************
+         * Demo Flow
+         ***************/
+        function startDemo() {
+            if(demoRunning) return;
+            demoRunning = true;
+            startTime = Date.now();
+            $('#btnStart').disabled = true;
+            $('#btnPause').disabled = false;
+            $('#btnEnd').disabled = false;
+            $('#btnSummary').disabled = false;
+            $('#btnExport').disabled = false;
+            $('#aiEngineStatus').textContent = 'ONLINE';
+            timerHandle = setInterval(updateTimer, 1000);
+            metricsHandle = setInterval(safeUpdate(updateMetrics), 2000);
+            schedulePhases();
+            scheduleConversation();
+            live('Demo started');
+        }
+
+        function schedulePhases(){
+            PHASES.forEach(ph => {
+                const ref = setTimeout(async () => {
+                    if(paused){ // reschedule minimal delay
+                        setTimeout(arguments.callee, 500);
+                        return;
+                    }
+                    currentPhaseIndex++;
+                    logData.phases.push({ ts:Date.now(), phase:ph.id });
+                    
+                    // Trigger backend demo phases for real traffic simulation
+                    try {
+                        const phaseIndex = PHASES.findIndex(p => p.id === ph.id) + 1;
+                        await fetch(`/api/demo/phase/${phaseIndex}`, { method: 'GET' });
+                        console.log(`Triggered backend phase ${phaseIndex} (${ph.id})`);
+                    } catch (e) {
+                        console.log('Demo phase trigger failed:', e);
+                    }
+                    
+                    if(ph.narrative) addNarrative(ph.narrative);
+                    if(ph.id === 'surge') showSurgeAlert();
+                    if(ph.id === 'govern') triggerGovernance();
+                    if(ph.id === 'summary') endDemo(false);
+                }, ph.t * 1000 / speed);
+                phaseHandleRefs.push(ref);
+            });
+        }
+
+        function scheduleConversation(){
+            CONVERSATION.forEach(item => {
+                setTimeout(() => {
+                    if(paused){ setTimeout(arguments.callee, 500); return; }
+                    addConversation('AI System', item.ai, true);
+                    addConversation('Static System', item.static, false);
+                }, (PHASES.find(p=>p.id===item.phase)?.t || 0) * 1000 / speed);
+            });
+        }
+
+        function setPaused(shouldPause){
+            if(!demoRunning) return;
+            paused = shouldPause;
+            $('#btnPause').disabled = paused;
+            $('#btnResume').disabled = !paused;
+            live(paused?'Demo paused':'Demo resumed');
+        }
+
+        function endDemo(manual){
+            if(!demoRunning) return;
+            demoRunning = false;
+            clearInterval(timerHandle);
+            clearInterval(metricsHandle);
+            phaseHandleRefs.forEach(t => clearTimeout(t));
+            phaseHandleRefs = [];
+            computeSummary();
+            live(manual?'Demo ended manually':'Demo completed');
+        }
+
+        function resetDemo(){
+            endDemo(false);
+            // Reset chart
+            if(chart){
+                chart.data.labels = [];
+                chart.data.datasets.forEach(d => d.data = []);
+                chart.update();
+            }
+            // Reset metrics
+            ['aiEntRPS','aiProRPS','aiFreeRPS'].forEach(id => document.getElementById(id).textContent='15 RPS');
+            $('#aiRevenueProtected').textContent = '$0/h';
+            $('#staticRevenueLost').textContent = '$0/h';
+            $('#totalRevenue').textContent = '$0';
+            $('#totalRPS').textContent = '0';
+            $('#surgeStatus').textContent = '0%';
+            $('#governanceStatus').textContent = 'ACTIVE';
+            $('#aiEngineStatus').textContent = 'READY';
+            $('#demoTimer').textContent = '0:00';
+            // Clear panels
+            $('#conversationBody').innerHTML = '';
+            $('#narrativeBody').innerHTML = '';
+            $('#promptBody').innerHTML = '<div style="text-align:center; color:var(--c-dim); font-size:.62rem; padding:8px 4px;">Prompts & responses will appear when scaling decisions occur...</div>';
+            seedInitialMessages();
+            // Buttons
+            $('#btnStart').disabled = false;
+            $('#btnPause').disabled = true;
+            $('#btnResume').disabled = true;
+            $('#btnEnd').disabled = true;
+            $('#btnSummary').disabled = true;
+            $('#btnExport').disabled = true;
+            // Data
+            Object.assign(logData, { phases:[], prompts:[], governance:[], revenueSamples:[], summary:null });
+            currentPhaseIndex = 0;
+            conversationCount = 0;
+            narrativeCount = 0;
+            promptCount = 0;
+            pendingGovernance = null;
+            updateTraffic('ai',0); updateTraffic('static',0);
+            live('Demo reset');
+        }
+
+        /***************
+         * Metrics & Scaling Simulation
+         ***************/
+        function updateTimer(){
+            if(!startTime) return;
+            const elapsed = Math.floor((Date.now() - startTime)/1000);
+            $('#demoTimer').textContent = formatTime(elapsed);
+        }
+
+        function safeUpdate(fn){
+            return async () => {
+                if(paused || !demoRunning) return;
+                try { await fn(); } catch(e){ console.error('Update failed', e); }
+            };
+        }
+
+        async function updateMetrics() {
+            const elapsed = demoRunning ? Math.floor((Date.now() - startTime)/1000) : 0;
+
+            // REAL traffic simulation - make actual API calls to trigger OLLAMA
+            if (demoRunning && elapsed > 0) {
+                await simulateRealTraffic(elapsed);
+            }
+
+            // Try to get real metrics from backend first
+            let realData = null;
+            try {
+                const response = await fetch('/demo/metrics');
+                if (response.ok) {
+                    realData = await response.json();
+                }
+            } catch (e) {
+                console.log('Using simulated data:', e);
+            }
+
+            // AI SYSTEM: Dynamic scaling based on real backend data or simulation
+            let aiEnt = 15, aiPro = 8, aiFree = 3;
+            let aiEntBlocked = 0, aiProBlocked = 0, aiFreeBlocked = 0;
+
+            if (realData && realData.tiers) {
+                // Use real backend metrics - AI scales dynamically
+                aiEnt = Math.max(15, Math.round(realData.tiers.ent?.rps_limit || 15));
+                aiPro = Math.max(8, Math.round(realData.tiers.pro?.rps_limit || 8)); 
+                aiFree = Math.max(3, Math.round(realData.tiers.free?.rps_limit || 3));
+                
+                // Show actual blocking ratios from backend
+                aiEntBlocked = Math.round((realData.tiers.ent?.blocked_ratio || 0) * 100);
+                aiProBlocked = Math.round((realData.tiers.pro?.blocked_ratio || 0) * 100);
+                aiFreeBlocked = Math.round((realData.tiers.free?.blocked_ratio || 0) * 100);
+            } else {
+                // Simulation: AI scales aggressively for high-value customers
+                if (elapsed > 15) { aiEnt = 25; aiPro = 15; aiFree = 5; } // AI detects demand
+                if (elapsed > 35) { aiEnt = 40; aiPro = 25; aiFree = 8; } // AI predicts surge
+                if (elapsed > 45) { aiEnt = 60; aiPro = 35; aiFree = 12; } // AI emergency scaling
+                
+                // AI blocks less because it scales proactively
+                aiEntBlocked = Math.max(0, 15 - elapsed); // Reduces blocking over time
+                aiProBlocked = Math.max(0, 20 - elapsed);
+                aiFreeBlocked = Math.min(35, elapsed); // Free tier gets limited
+            }
+
+            // STATIC SYSTEM: Fixed limits, never scales
+            const staticEnt = 15, staticPro = 8, staticFree = 3; // NEVER CHANGES
+            let staticEntBlocked = 0, staticProBlocked = 0, staticFreeBlocked = 0;
+            
+            // Static system blocking increases with traffic
+            if (elapsed > 15) { staticEntBlocked = 25; staticProBlocked = 30; staticFreeBlocked = 45; }
+            if (elapsed > 35) { staticEntBlocked = 50; staticProBlocked = 60; staticFreeBlocked = 75; }
+            if (elapsed > 45) { staticEntBlocked = 80; staticProBlocked = 85; staticFreeBlocked = 90; }
+
+            // Revenue calculations - AI wins by allowing more valuable requests
+            const aiRevenue = projectRevenue(aiEnt, aiPro, aiFree, false);
+            const staticRevenue = projectRevenue(staticEnt, staticPro, staticFree, true, staticEntBlocked);
+            const delta = aiRevenue - staticRevenue;
+
+            // Update AI system display
+            $('#aiEntRPS').textContent = aiEnt + ' RPS';
+            $('#aiProRPS').textContent = aiPro + ' RPS';  
+            $('#aiFreeRPS').textContent = aiFree + ' RPS';
+            $('#aiBlocked').textContent = Math.round((aiEntBlocked + aiProBlocked + aiFreeBlocked) / 3) + '%';
+
+            // Update Static system display  
+            $('#staticEntRPS').textContent = staticEnt + ' RPS';
+            $('#staticProRPS').textContent = staticPro + ' RPS';
+            $('#staticFreeRPS').textContent = staticFree + ' RPS';
+            $('#staticBlocked').textContent = Math.round((staticEntBlocked + staticProBlocked + staticFreeBlocked) / 3) + '%';
+
+            // Revenue comparison
+            $('#aiRevenueProtected').textContent = toMoney(aiRevenue) + '/h';
+            $('#staticRevenueLost').textContent = toMoney(staticRevenue) + '/h';
+            $('#totalRevenue').textContent = toMoney(delta);
+            $('#totalRPS').textContent = (aiEnt + aiPro + aiFree) + ' vs ' + (staticEnt + staticPro + staticFree);
+
+            updateTraffic('ai', Math.min(55, elapsed * 2));
+            updateTraffic('static', Math.min(28, elapsed * 1.1));
+
+            if(chart && demoRunning){
+                const ts = new Date().toLocaleTimeString();
+                chart.data.labels.push(ts);
+                
+                // AI System (dynamic scaling) - GREEN LINES
+                chart.data.datasets[0].data.push(aiEnt);
+                chart.data.datasets[1].data.push(aiPro);
+                chart.data.datasets[2].data.push(aiFree);
+                
+                // Static System (fixed limits) - RED LINES
+                chart.data.datasets[3].data.push(staticEnt);
+                chart.data.datasets[4].data.push(staticPro);
+                chart.data.datasets[5].data.push(staticFree);
+                
+                // Dynamic Y axis to show AI scaling advantage
+                if (logData.config.dynamicYAxis) {
+                    const allVals = chart.data.datasets.flatMap(d => d.data);
+                    const maxVal = Math.max(...allVals, 20);
+                    const targetMax = Math.ceil(maxVal / 10) * 10;
+                    if (chart.options.scales.y.max !== targetMax) {
+                        chart.options.scales.y.max = targetMax;
+                    }
+                }
+                if(chart.data.labels.length > 20){
+                    chart.data.labels.shift();
+                    chart.data.datasets.forEach(d => d.data.shift());
+                }
+                chart.update('none');
+            }
+
+            logData.revenueSamples.push({ ts:Date.now(), aiHourly:aiRevenue, staticHourly:staticRevenue });
+
+            // Surge probability simulation
+            if (elapsed >= 35 && elapsed <= 55) {
+                const pct = Math.min(90, Math.floor((elapsed - 35) * 6) + 30);
+                $('#surgeStatus').textContent = pct + '%';
+            }
+        }
+
+        function projectRevenue(entRPS, proRPS, freeRPS, isStaticSystem=false, blockingPercentage=0){
+            let effectiveEntRPS = entRPS;
+            let effectiveProRPS = proRPS;
+            let effectiveFreeRPS = freeRPS;
+            
+            if(isStaticSystem && blockingPercentage > 0){
+                // Static system loses requests due to blocking
+                const blockedRatio = blockingPercentage / 100;
+                effectiveEntRPS = entRPS * (1 - blockedRatio);
+                effectiveProRPS = proRPS * (1 - blockedRatio);
+                effectiveFreeRPS = freeRPS * (1 - blockedRatio);
+            }
+            
+            return Math.round(
+                (effectiveEntRPS * REVENUE_RATES.enterprise +
+                 effectiveProRPS * REVENUE_RATES.professional +
+                 effectiveFreeRPS * REVENUE_RATES.free) * 3600
+            );
+        }
+
+        function updateTraffic(system, intensity){
+            const container = document.getElementById(system === 'ai' ? 'aiTrafficDots' : 'staticTrafficDots');
+            if(!container) return;
+            container.innerHTML = '';
+            const count = Math.max(3, Math.floor(intensity/3));
+            for(let i=0;i<count;i++){
+                const d = document.createElement('div');
+                d.className = 'dot';
+                const r = Math.random();
+                if(r < 0.2) d.classList.add('enterprise');
+                else if(r < 0.55) d.classList.add('professional');
+                else d.classList.add('free');
+                container.appendChild(d);
+            }
+        }
+
+        /***************
+         * Conversation / Narrative / Prompts
+         ***************/
+        function addConversation(source, text, isAI=false, initial=false){
+            const body = $('#conversationBody');
+            const wrap = document.createElement('div');
+            wrap.className = 'message ' + (isAI?'ai':'static');
+            wrap.innerHTML = `
+                <div class="msg-head">
+                    <div class="avatar" aria-hidden="true">${isAI?'🤖':'🗿'}</div>
+                    <div class="name">${source}</div>
+                </div>
+                <div class="bubble">${text}</div>
+            `;
+            body.appendChild(wrap);
+            body.scrollTop = body.scrollHeight;
+            if(!initial) conversationCount++;
+            while(body.children.length > 10) body.removeChild(body.firstChild);
+        }
+
+        function addNarrative(text){
+            const body = $('#narrativeBody');
+            const item = document.createElement('div');
+            item.className = 'narrative-item';
+            item.textContent = text;
+            body.appendChild(item);
+            body.scrollTop = body.scrollHeight;
+            narrativeCount++;
+            while(body.children.length > 6) body.removeChild(body.firstChild);
+        }
+
+        function addPrompt(prompt, response){
+            const body = $('#promptBody');
+            if(body.children.length === 1 && body.firstChild.textContent.includes('Prompts & responses')) {
+                body.innerHTML = '';
+            }
+            const block = document.createElement('div');
+            block.className = 'prompt-block';
+            block.innerHTML = `
+                <div class="prompt-label">AI Prompt</div>
+                <div class="prompt">${escapeHtml(prompt)}</div>
+                <div class="prompt-label" style="margin-top:6px;">AI Response</div>
+                <div class="response">${escapeHtml(response)}</div>
+            `;
+            body.appendChild(block);
+            body.scrollTop = body.scrollHeight;
+            promptCount++;
+            logData.prompts.push({ ts:Date.now(), prompt, response });
+            while(body.children.length > 5) body.removeChild(body.firstChild);
+        }
+
+        function escapeHtml(str){
+            return str.replace(/[&<>"']/g, c => ({
+                '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+            }[c]));
+        }
+
+        /***************
+         * Governance & Surge
+         ***************/
+        function showSurgeAlert(){
+            const el = $('#surgeAlert');
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 4000);
+        }
+
+        function triggerGovernance(){
+            pendingGovernance = {
+                id:'gov-' + Date.now(),
+                tier:'enterprise',
+                oldLimit:15,
+                newLimit:45,
+                factor:(45/15).toFixed(1),
+                confidence:0.92
+            };
+            $('#governanceStatus').textContent = 'PENDING';
+            renderGovernanceDetails();
+            openGovernance();
+            addPrompt(
+                'Scaling request: Enterprise 15→45 RPS; Reason: Surge mitigation & revenue protection; Confidence 0.92',
+                '{"action":"scale_request","enterprise_rps":45,"confidence":0.92,"governance_required":true}'
+            );
+        }
+
+        function renderGovernanceDetails(){
+            const d = $('#governanceDetails');
+            d.innerHTML = `
+                ${govItem('Tier', pendingGovernance.tier.toUpperCase())}
+                ${govItem('Old Limit', pendingGovernance.oldLimit + ' RPS')}
+                ${govItem('Proposed', pendingGovernance.newLimit + ' RPS')}
+                ${govItem('Factor', pendingGovernance.factor + 'x')}
+                ${govItem('Confidence', Math.round(pendingGovernance.confidence*100)+'%')}
+                ${govItem('Reason', 'Surge Mitigation')}
+            `;
+        }
+        function govItem(label,val){
+            return `
+                <div class="gov-item">
+                    <div class="lbl">${label}</div>
+                    <div class="val">${val}</div>
+                </div>
+            `;
+        }
+
+        function openGovernance(){ $('#governanceModal').classList.add('active'); live('Governance review required'); }
+        function closeGovernance(){ $('#governanceModal').classList.remove('active'); }
+
+        function handleGovernanceDecision(approved){
+            closeGovernance();
+            $('#governanceStatus').textContent = 'ACTIVE';
+            logData.governance.push({
+                ts:Date.now(),
+                id: pendingGovernance.id,
+                approved,
+                details: pendingGovernance
+            });
+            if(approved){
+                addConversation('AI System','Scaling approved and applied. Limits updated.', true);
+                addPrompt('Governance approved scaling request.', '{"status":"approved","applied":true}');
+                addNarrative('Governance approved. AI applied scaling under oversight.');
+            } else {
+                addConversation('AI System','Scaling rejected. Maintaining conservative posture.', true);
+                addPrompt('Governance rejected scaling request.', '{"status":"rejected","fallback_applied":true}');
+                addNarrative('Governance rejected scaling. AI retained prior limit.');
+            }
+            pendingGovernance = null;
+        }
+
+        /***************
+         * Summary & Export
+         ***************/
+        function computeSummary(){
+            if(!logData.revenueSamples.length) return;
+            const aiAvg = Math.round(avg(logData.revenueSamples.map(r=>r.aiHourly)));
+            const staticAvg = Math.round(avg(logData.revenueSamples.map(r=>r.staticHourly)));
+            const aiPeak = Math.max(...logData.revenueSamples.map(r=>r.aiHourly));
+            const staticPeak = Math.max(...logData.revenueSamples.map(r=>r.staticHourly));
+            logData.summary = {
+                aiAvgHourly: aiAvg,
+                staticAvgHourly: staticAvg,
+                deltaHourly: aiAvg - staticAvg,
+                aiPeakHourly: aiPeak,
+                staticPeakHourly: staticPeak,
+                samples: logData.revenueSamples.length,
+                phasesCompleted: currentPhaseIndex,
+                prompts: logData.prompts.length,
+                governanceDecisions: logData.governance.length
+            };
+        }
+
+        function showSummary(){
+            if(!logData.summary) computeSummary();
+            if(!logData.summary){
+                live('No summary available yet');
+                return;
+            }
+            const g = $('#kpiGrid');
+            g.innerHTML = '';
+            const entries = [
+                ['Avg AI Protected (hr)', toMoney(logData.summary.aiAvgHourly)],
+                ['Avg Static (hr)', toMoney(logData.summary.staticAvgHourly)],
+                ['Delta (hr)', toMoney(logData.summary.deltaHourly)],
+                ['AI Peak (hr)', toMoney(logData.summary.aiPeakHourly)],
+                ['Static Peak (hr)', toMoney(logData.summary.staticPeakHourly)],
+                ['Samples', logData.summary.samples],
+                ['Phases', logData.summary.phasesCompleted],
+                ['Prompts', logData.summary.prompts],
+                ['Governance', logData.summary.governanceDecisions]
+            ];
+            entries.forEach(([k,v]) => {
+                const card = document.createElement('div');
+                card.className='kpi-card';
+                card.innerHTML = `<h5>${k}</h5><div class="val">${v}</div>`;
+                g.appendChild(card);
+            });
+            $('#kpiOverlay').classList.add('show');
+            live('Summary displayed');
+        }
+        function hideSummary(){ $('#kpiOverlay').classList.remove('show'); }
+        function exportLog(){
+            computeSummary();
+            downloadJSON(logData, 'ai_rate_limiter_demo_log');
+        }
+        function exportSummary(){
+            computeSummary();
+            downloadJSON(logData.summary, 'ai_rate_limiter_demo_summary');
+        }
+        function downloadJSON(obj, base){
+            const blob = new Blob([JSON.stringify(obj,null,2)],{ type:'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${base}_${new Date().toISOString().replace(/[:]/g,'-')}.json`;
+            a.click();
+        }
+        function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+
+        /***************
+         * Real Traffic Simulation
+         ***************/
+        async function simulateRealTraffic(elapsed) {
+            const trafficPhases = [
+                { start: 0, end: 15, ent: 5, pro: 3, free: 2 },    // Light initial traffic
+                { start: 15, end: 35, ent: 12, pro: 8, free: 4 },  // Moderate growth
+                { start: 35, end: 45, ent: 20, pro: 15, free: 8 }, // Building to surge
+                { start: 45, end: 70, ent: 35, pro: 25, free: 12 } // Surge traffic
+            ];
+
+            const currentPhase = trafficPhases.find(p => elapsed >= p.start && elapsed < p.end);
+            if (!currentPhase) return;
+
+            // Make actual API requests with proper API keys to trigger rate limiting
+            const requests = [
+                { key: 'ent-key', count: Math.floor(currentPhase.ent / 10) || 1 },
+                { key: 'pro-key', count: Math.floor(currentPhase.pro / 10) || 1 },
+                { key: 'free-key', count: Math.floor(currentPhase.free / 10) || 1 }
+            ];
+
+            // Make requests to both endpoints
+            const endpoints = ['/api/v1/resourceA', '/api/v1/resourceB'];
+            
+            for (const { key, count } of requests) {
+                for (let i = 0; i < count; i++) {
+                    for (const endpoint of endpoints) {
+                        try {
+                            // Make actual request with API key to trigger rate limiter
+                            await fetch(endpoint, {
+                                method: 'GET',
+                                headers: {
+                                    'X-API-Key': key,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                        } catch (e) {
+                            // Ignore network errors - we just want to trigger rate limiting
+                        }
+                    }
+                }
+            }
+        }
+
+        /***************
+         * Manual Testing Functions
+         ***************/
+        async function testOllamaManual() {
+            try {
+                const response = await fetch('/debug/test-ollama?tenant=pro&endpoint=/api/v1/resourceA');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    addPrompt('Manual OLLAMA Test', JSON.stringify(result.validated_decision, null, 2));
+                    addNarrative('Manual OLLAMA test successful - AI responded');
+                    live('OLLAMA test successful');
+                } else {
+                    addNarrative('Manual OLLAMA test failed: ' + result.message);
+                    live('OLLAMA test failed');
+                }
+            } catch (e) {
+                addNarrative('OLLAMA test error: ' + e.message);
+                live('OLLAMA test error');
+            }
+        }
+
+        async function simulateTrafficManual() {
+            try {
+                // Simulate traffic for all tiers
+                const promises = ['ent', 'pro', 'free'].map(tenant => 
+                    fetch('/debug/simulate-traffic', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tenant, requests: 25 })
+                    })
+                );
+                
+                await Promise.all(promises);
+                addNarrative('Manual traffic simulation triggered - AI should analyze in next cycle');
+                live('Traffic simulation triggered');
+            } catch (e) {
+                addNarrative('Traffic simulation error: ' + e.message);
+                live('Traffic simulation error');
+            }
+        }
+
+        /***************
+         * Backend Metrics Attempt (optional)
+         ***************/
+        async function tryEnableRealMetrics(){
+            try {
+                const resp = await fetch('/demo/metrics',{ method:'HEAD' });
+                if(resp.ok){
+                    realMetricsMode = true;
+                    live('Real metrics mode available');
+                }
+            } catch {
+                // remain simulated
+            }
+        }
+
+        /***************
+         * Utility
+         ***************/
+        function addPromptSamples(){
+            // Called at key phases (simulate AI reasoning)
+            addPrompt(
+                'Baseline analysis: enterprise=0.20, professional=0.05, free=0.01 ($/req); allocate initial RPS 15/8/3.',
+                '{"action":"baseline_set","enterprise_rps":15,"professional_rps":8,"free_rps":3,"confidence":0.95}'
+            );
+            setTimeout(()=>addPrompt(
+                'Utilization rising (enterprise 67%, professional 62%). Evaluate scaling for throughput preservation.',
+                '{"action":"scale_up","enterprise_rps":22,"professional_rps":12,"reason":"utilization_threshold","confidence":0.89}'
+            ), 10000 / speed);
+            setTimeout(()=>addPrompt(
+                'Surge probability 67%; pre-scaling for enterprise continuity.',
+                '{"action":"pre_scale","enterprise_rps":35,"professional_rps":20,"confidence":0.9}'
+            ), 30000 / speed);
+            setTimeout(()=>addPrompt(
+                'Emergency surge active (3x baseline). Requesting governance for +3x enterprise.',
+                '{"action":"emergency_request","requested_enterprise_rps":45,"governance":true,"confidence":0.92}'
+            ), 43000 / speed);
+        }
+
+        // Kick off prompt samples upon start (slight delay to ensure timeline)
+        function afterStartHook(){
+            addPromptSamples();
+        }
+
+        /***************
+         * Start Hook Augmentation
+         ***************/
+        const origStartDemo = startDemo;
+        function startDemoWrapper(){
+            origStartDemo();
+            afterStartHook();
+        }
+        // Replace the start button binding
+        $('#btnStart')?.removeEventListener('click', startDemo);
+        $('#btnStart')?.addEventListener('click', startDemoWrapper);
+
+        /***************
+         * Clean Shutdown on Unload
+         ***************/
+        window.addEventListener('beforeunload', () => {
+            if(demoRunning) endDemo(false);
+        });
+    </script>
+</body>
+</html>

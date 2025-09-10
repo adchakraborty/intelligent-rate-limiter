@@ -1,0 +1,131 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker-logs
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.compose.service=limiter"]
+    
+    relabel_configs:
+      # Only process limiter containers
+      - source_labels: [__meta_docker_container_label_com_docker_compose_service]
+        regex: 'limiter'
+        action: keep
+      
+      # Set container_name from container name (remove leading slash)
+      - source_labels: [__meta_docker_container_name]
+        target_label: container_name
+        regex: '/(.*)'
+        replacement: '${1}'
+      
+      # Set service label
+      - target_label: service
+        replacement: 'ai-rate-limiter'
+      
+      # Set job label
+      - target_label: job
+        replacement: 'docker-logs'
+      
+      # Set log file path for Docker JSON logs
+      - source_labels: [__meta_docker_container_id]
+        target_label: __path__
+        replacement: '/var/lib/docker/containers/${1}/${1}-json.log'
+    
+    pipeline_stages:
+      # Parse Docker JSON log format
+      - json:
+          expressions:
+            log: log
+            timestamp: time
+            stream: stream
+      
+      # Handle timestamp
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+      
+      # Try to parse structured Python logs, but don't fail if format doesn't match
+      - regex:
+          source: log
+          expression: '^(?P<log_timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<level>\w+) - (?P<message>.*)$'
+      
+      # If structured parsing failed, treat whole log as message
+      - template:
+          source: message
+          template: '{{ if not .message }}{{ .log }}{{ else }}{{ .message }}{{ end }}'
+      
+      # Extract OLLAMA events with relaxed pattern
+      - regex:
+          source: message
+          expression: '.*OLLAMA_(?P<ollama_action>\w+)'
+      
+      # Extract additional OLLAMA metadata (optional, won't fail if missing)
+      - regex:
+          source: message
+          expression: '.*tenant=(?P<tenant>\w+)'
+      
+      - regex:
+          source: message
+          expression: '.*endpoint=(?P<endpoint>[/\w-]+)'
+      
+      - regex:
+          source: message
+          expression: '.*attempt=(?P<attempt>\d+)'
+      
+      # Set all labels (empty values are fine)
+      - labels:
+          level:
+          ollama_action:
+          tenant:
+          endpoint:
+          attempt:
+          service:
+          container_name:
+          stream:
+          job:
+
+  # Fallback: Direct file scraping in case Docker SD fails
+  - job_name: limiter-direct
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: limiter-direct
+          service: ai-rate-limiter
+          container_name: limiter
+          __path__: /var/lib/docker/containers/*/limiter*-json.log
+    
+    pipeline_stages:
+      - json:
+          expressions:
+            log: log
+            timestamp: time
+      
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+      
+      - template:
+          source: message
+          template: '{{ .log }}'
+      
+      - regex:
+          source: message
+          expression: '.*OLLAMA_(?P<ollama_action>\w+)'
+      
+      - labels:
+          ollama_action:
+          service:
+          container_name:
+          job:

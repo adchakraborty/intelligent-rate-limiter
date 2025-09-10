@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 5s          # More stable scraping
+  evaluation_interval: 5s      # Stable evaluation
+  scrape_timeout: 3s           # Longer timeout
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  - job_name: limiter
+    metrics_path: /metrics
+    scrape_interval: 2s         # Frequent scraping for limiter
+    static_configs:
+      - targets: ['limiter:8080']
+
+  - job_name: backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['backend:8000']

@@ -1,0 +1,73 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: backend
+    url: http://backend:8000
+    routes:
+      - name: resourceA
+        paths: ["/api/v1/resourceA"]
+        methods: ["GET"]
+        strip_path: false
+      - name: resourceB
+        paths: ["/api/v1/resourceB"]  
+        methods: ["GET"]
+        strip_path: false
+
+consumers:
+  - username: free
+    keyauth_credentials:
+      - key: free-key
+  - username: pro
+    keyauth_credentials:
+      - key: pro-key
+  - username: ent
+    keyauth_credentials:
+      - key: ent-key
+
+plugins:
+  # Key auth MUST be first
+  - name: key-auth
+    config:
+      key_names: ["X-API-Key"]
+      hide_credentials: true
+
+  # REALISTIC rate limiting - moderate but inflexible
+  - name: rate-limiting
+    consumer: free
+    config:
+      second: 5           # 5 per second = reasonable but rigid
+      minute: 200         # 200 per minute = 3.33 RPS average
+      hour: 10000         # 10k per hour
+      policy: local
+      limit_by: consumer
+      hide_client_headers: false
+
+  - name: rate-limiting
+    consumer: pro  
+    config:
+      second: 10          # 10 per second = good baseline
+      minute: 500         # 500 per minute = 8.33 RPS average
+      hour: 25000         # 25k per hour
+      policy: local
+      limit_by: consumer
+      hide_client_headers: false
+
+  - name: rate-limiting
+    consumer: ent
+    config:
+      second: 20          # 20 per second = enterprise level
+      minute: 1000        # 1000 per minute = 16.67 RPS average
+      hour: 50000         # 50k per hour
+      policy: local
+      limit_by: consumer
+      hide_client_headers: false
+
+  # Prometheus metrics AFTER rate limiting
+  - name: prometheus
+    config:
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+      per_consumer: true
