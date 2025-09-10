@@ -1,261 +1,354 @@
 {
   "id": null,
-  "title": "🤖 AI Rate Limiter - Hackathon Demo",
-  "tags": ["ai", "rate-limiting", "hackathon", "ollama"],
+  "title": "🏆 AI Rate Limiter - Simple Demo",
+  "tags": ["ai", "rate-limiting", "hackathon", "simple"],
   "timezone": "browser",
   "refresh": "1s",
   "time": {
     "from": "now-3m",
     "to": "now"
   },
-    "panels": [
-      {
-        "id": 1,
-        "title": "🚀 Live Traffic & AI Responses",
-        "description": "Real-time incoming traffic and AI rate limiting responses. Shows current load and system adaptation",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "rate(rl_requests_total{outcome=\"ok\"}[30s])",
-            "legendFormat": "{{tenant}} Successful RPS"
-          },
-          {
-            "expr": "rate(rl_requests_total{outcome=\"blocked\"}[30s])",
-            "legendFormat": "{{tenant}} Blocked RPS"
-          },
-          {
-            "expr": "rl_real_time_rps",
-            "legendFormat": "{{tenant}} Current Load"
+  "panels": [
+    {
+      "id": 1,
+      "title": "🚀 Traffic vs Limits: AI vs Static",
+      "description": "THE KEY PANEL: Shows incoming traffic and how AI limits adapt vs static limits. This is your main story!",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rl_real_time_rps",
+          "legendFormat": "{{tenant}} Incoming Traffic"
+        },
+        {
+          "expr": "rl_policy_rps",
+          "legendFormat": "AI {{tenant}} Limit"
+        },
+        {
+          "expr": "15",
+          "legendFormat": "Static ENT Limit"
+        },
+        {
+          "expr": "10",
+          "legendFormat": "Static PRO Limit"
+        },
+        {
+          "expr": "5",
+          "legendFormat": "Static FREE Limit"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0,
+          "max": 100,
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
           }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {"mode": "palette-classic"},
-            "custom": {"displayMode": "gradient"},
-            "thresholds": {
-              "steps": [
-                {"color": "red", "value": 0},
-                {"color": "yellow", "value": 50},
-                {"color": "green", "value": 100}
-              ]
-            },
-            "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byRegexp", "options": ".*ent.*Traffic.*"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+              {"id": "custom.lineWidth", "value": 3},
+              {"id": "displayName", "value": "🏆 ENT Traffic"}
+            ]
           },
-          "overrides": [
-            {
-              "matcher": {"id": "byRegexp", "options": ".*ent.*"},
-              "properties": [
-                {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
-                {"id": "displayName", "value": "🏆 Enterprise"}
-              ]
+          {
+            "matcher": {"id": "byRegexp", "options": ".*pro.*Traffic.*"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+              {"id": "custom.lineWidth", "value": 3},
+              {"id": "displayName", "value": "💼 PRO Traffic"}
+            ]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": ".*free.*Traffic.*"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+              {"id": "custom.lineWidth", "value": 3},
+              {"id": "displayName", "value": "� FREE Traffic"}
+            ]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": "AI.*ent.*Limit"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "dark-green"}},
+              {"id": "custom.lineStyle", "value": {"dash": [10, 10]}},
+              {"id": "displayName", "value": "🤖 AI ENT Limit"}
+            ]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": "AI.*pro.*Limit"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "dark-blue"}},
+              {"id": "custom.lineStyle", "value": {"dash": [10, 10]}},
+              {"id": "displayName", "value": "🤖 AI PRO Limit"}
+            ]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": "AI.*free.*Limit"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "dark-orange"}},
+              {"id": "custom.lineStyle", "value": {"dash": [10, 10]}},
+              {"id": "displayName", "value": "🤖 AI FREE Limit"}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Static ENT Limit"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+              {"id": "custom.lineStyle", "value": {"dash": [5, 5]}},
+              {"id": "custom.lineWidth", "value": 1}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Static PRO Limit"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+              {"id": "custom.lineStyle", "value": {"dash": [5, 5]}},
+              {"id": "custom.lineWidth", "value": 1}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Static FREE Limit"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+              {"id": "custom.lineStyle", "value": {"dash": [5, 5]}},
+              {"id": "custom.lineWidth", "value": 1}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "title": "🧠 AI Confidence",
+      "description": "AI decision confidence score - shows AI is making reliable decisions (>85% = good)",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "avg(rl_ai_confidence_score)",
+          "legendFormat": "AI Confidence"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": 0},
+              {"color": "yellow", "value": 0.7},
+              {"color": "green", "value": 0.85}
+            ]
+          }
+        }
+      },
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 12}
+    },
+    {
+      "id": 3,
+      "title": "🌊 Surge Analysis",
+      "description": "AI predicts traffic surges before they happen - shows predictive capability",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rl_surge_prediction",
+          "legendFormat": "{{tenant}} Surge Probability"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "unit": "percentunit",
+          "color": {"mode": "palette-classic"}
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byRegexp", "options": ".*ent.*"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+              {"id": "displayName", "value": "🏆 ENT Surge"}
+            ]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": ".*pro.*"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+              {"id": "displayName", "value": "💼 PRO Surge"}
+            ]
+          },
+          {
+            "matcher": {"id": "byRegexp", "options": ".*free.*"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+              {"id": "displayName", "value": "🆓 FREE Surge"}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 8, "w": 9, "x": 6, "y": 12}
+    },
+    {
+      "id": 4,
+      "title": "🏆 Governance Queue",
+      "description": "Governance decisions: pending vs auto-approved - shows enterprise governance in action",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "rl_governance_queue_size",
+          "legendFormat": "Pending Decisions"
+        },
+        {
+          "expr": "increase(rl_ai_decisions_total{applied=\"true\"}[1m])",
+          "legendFormat": "Auto-Approved (last min)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "displayMode": "basic"
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Pending Decisions"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "yellow"}},
+              {"id": "displayName", "value": "⏳ Pending"}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Auto-Approved (last min)"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+              {"id": "displayName", "value": "✅ Approved"}
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "horizontal"
+      },
+      "gridPos": {"h": 8, "w": 9, "x": 15, "y": 12}
+    },
+    {
+      "id": 5,
+      "title": "📊 Current RPS: AI vs Static Comparison",
+      "description": "Real-time RPS comparison table - shows AI advantage over static limits",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "rl_real_time_rps",
+          "legendFormat": "{{tenant}}",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "rl_policy_rps",
+          "legendFormat": "{{tenant}}",
+          "format": "table", 
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "displayMode": "color-background",
+            "align": "center"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Tenant"},
+            "properties": [
+              {"id": "custom.width", "value": 120},
+              {"id": "mappings", "value": [
+                {"options": {"ent": {"text": "🏆 Enterprise"}}, "type": "value"},
+                {"options": {"pro": {"text": "💼 Professional"}}, "type": "value"},
+                {"options": {"free": {"text": "🆓 Free"}}, "type": "value"}
+              ]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Current Traffic"},
+            "properties": [
+              {"id": "custom.width", "value": 130},
+              {"id": "color", "value": {"mode": "continuous-GrYlRd"}}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "AI Limit"},
+            "properties": [
+              {"id": "custom.width", "value": 100},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Static Limit"},
+            "properties": [
+              {"id": "custom.width", "value": 110},
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "__name__": true,
+              "Time": true,
+              "job": true,
+              "instance": true
             },
-            {
-              "matcher": {"id": "byRegexp", "options": ".*pro.*"},
-              "properties": [
-                {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
-                {"id": "displayName", "value": "💼 Professional"}
-              ]
-            },
-            {
-              "matcher": {"id": "byRegexp", "options": ".*free.*"},
-              "properties": [
-                {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
-                {"id": "displayName", "value": "🆓 Free"}
-              ]
+            "indexByName": {},
+            "renameByName": {
+              "tenant": "Tenant",
+              "Value #A": "Current Traffic",
+              "Value #B": "AI Limit"
             }
-          ]
-        },
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
-      },
-      {
-        "id": 2,
-        "title": "💰 Revenue Protection (Real-time)",
-        "description": "Business impact: Revenue protected vs lost during traffic surges. AI prevents revenue loss by smart scaling",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "rl_revenue_protected_total",
-            "legendFormat": "{{tenant}} Protected"
-          },
-          {
-            "expr": "rl_revenue_lost_total",
-            "legendFormat": "{{tenant}} Lost"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {"mode": "palette-classic"},
-            "unit": "currencyUSD"
           }
         },
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
-      },
-      {
-        "id": 3,
-        "title": "🧠 AI Engine Health",
-        "description": "AI decision confidence and engine status. High confidence (>85%) means reliable autonomous decisions",
-        "type": "gauge",
-        "targets": [
-          {
-            "expr": "avg(rl_ai_confidence_score)",
-            "legendFormat": "AI Confidence"
-          },
-          {
-            "expr": "rl_ai_engine_active",
-            "legendFormat": "Engine Status"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "min": 0,
-            "max": 1,
-            "thresholds": {
-              "steps": [
-                {"color": "red", "value": 0},
-                {"color": "yellow", "value": 0.7},
-                {"color": "green", "value": 0.85}
-              ]
-            }
-          }
-        },
-        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8}
-      },
-      {
-        "id": 4,
-        "title": "🌊 Surge Prediction",
-        "description": "AI's predictive capability: Forecasts traffic surges before they happen (0-100% surge probability)",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "rl_surge_prediction",
-            "legendFormat": "{{tenant}}/{{endpoint}} Surge %"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "min": 0,
-            "max": 1,
-            "unit": "percentunit"
-          }
-        },
-        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8}
-      },
-      {
-        "id": 5,
-        "title": "🏆 Governance Queue (Auto-Approved)",
-        "description": "Pending AI decisions requiring approval. Auto-approved after 0.5s for demo flow. Shows governance for large changes (>2x rate limit)",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "rl_governance_queue_size",
-            "legendFormat": "Queue Size"
-          },
-          {
-            "expr": "rate(rl_ai_decisions_total{applied=\"true\"}[30s]) * 60",
-            "legendFormat": "Auto-Approvals/min"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {"mode": "thresholds"},
-            "thresholds": {
-              "steps": [
-                {"color": "green", "value": 0},
-                {"color": "yellow", "value": 1},
-                {"color": "red", "value": 3}
-              ]
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Static Limit",
+            "binary": {
+              "left": "Tenant",
+              "operator": "==",
+              "reducer": "sum",
+              "right": "ent"
             },
-            "custom": {
-              "displayMode": "gradient"
-            }
-          }
-        },
-        "options": {
-          "textMode": "auto",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "center",
-          "displayMode": "gradient"
-        },
-        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8}
-      },
-      {
-        "id": 6,
-        "title": "🎯 Customer Satisfaction",
-        "description": "Customer experience score by tier. AI maintains high satisfaction while protecting system resources",
-        "type": "bargauge",
-        "targets": [
-          {
-            "expr": "rl_customer_satisfaction",
-            "legendFormat": "{{tenant}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "min": 0,
-            "max": 1,
-            "color": {"mode": "continuous-GrYlRd"},
-            "unit": "percentunit"
-          }
-        },
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
-      },
-      {
-        "id": 7,
-        "title": "📊 AI Adaptive RPS Limits",
-        "description": "Shows how AI dynamically adjusts rate limits (15-60 RPS) based on real-time traffic patterns vs static limits",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "rl_policy_rps",
-            "legendFormat": "AI {{tenant}} Dynamic"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "reqps",
-            "color": {"mode": "palette-classic"},
-            "custom": {
-              "thresholdsStyle": {
-                "mode": "line"
-              }
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
             },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"color": "red", "value": null},
-                {"color": "yellow", "value": 10},
-                {"color": "green", "value": 20},
-                {"color": "blue", "value": 50}
-              ]
-            },
-            "min": 0,
-            "max": 120
-          },
-          "overrides": [
-            {
-              "matcher": {"id": "byName", "options": "AI ent Dynamic"},
-              "properties": [
-                {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}
-              ]
-            },
-            {
-              "matcher": {"id": "byName", "options": "AI pro Dynamic"},  
-              "properties": [
-                {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
-              ]
-            },
-            {
-              "matcher": {"id": "byName", "options": "AI free Dynamic"},
-              "properties": [
-                {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}
-              ]
-            }
-          ]
-        },
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
-      }
-
+            "replaceFields": false
+          }
+        }
+      ],
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20}
+    }
   ],
   "schemaVersion": 30,
   "version": 1,
