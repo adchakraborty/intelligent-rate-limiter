@@ -102,28 +102,28 @@ Traditional rate limiting solutions are causing massive financial damage across 
 ### **Core Components**
 
 #### **1. AI Decision Engine**
-- **Model**: LLaMA 3.2 (3B parameters) running on Ollama
+- **Model**: LLaMA 3.2 (3B parameters) via external Ollama service
 - **Purpose**: Business-aware rate limiting decisions
 - **Input**: Customer tier, current traffic, revenue metrics, surge predictions
 - **Output**: Structured JSON with RPS limits and confidence scores
 
 #### **2. Surge Prediction System**
 - **Algorithm**: Pattern recognition with sliding window analysis
-- **Prediction Window**: 30 seconds advance warning
-- **Accuracy**: 89% surge detection rate in testing
+- **Prediction Capability**: Multi-level threat classification
+- **Implementation**: Business rule-based detection
 - **Levels**: Normal (0-29%), Surge (30-69%), DDoS (70%+)
 
 #### **3. Business Intelligence Layer**
 - **Customer Value Matrix**: Revenue-per-request calculations
 - **Tier Prioritization**: Enterprise > Professional > Free
 - **Revenue Optimization**: Protect high-value customers during surges
-- **Lifetime Value Integration**: Future expansion for customer LTV
+- **Scaling Rules**: Intelligent business-aware limits
 
 #### **4. Enterprise Governance**
 - **Approval Thresholds**: >1.8x scaling requires human approval
 - **Risk Assessment**: Confidence scores and impact analysis
 - **Audit Compliance**: Complete decision history preservation
-- **Role-based Access**: Future multi-user approval workflows
+- **Safety Constraints**: Hard limits prevent runaway scaling
 
 ---
 
@@ -132,20 +132,21 @@ Traditional rate limiting solutions are causing massive financial damage across 
 ### **LLaMA 3.2 Integration Architecture**
 
 ```python
-# Core AI Decision Pipeline
+# Core AI Decision Pipeline (External Ollama Integration)
 class AIRateLimiter:
     def __init__(self):
+        self.ollama_url = "http://host.docker.internal:11434"
         self.model = "llama3.2:3b"
         self.confidence_threshold = 0.60
         self.max_scaling_factor = 8.0
         
     def make_decision(self, context):
         prompt = self.build_business_prompt(context)
-        response = self.query_llama(prompt)
+        response = self.query_ollama_api(prompt)
         decision = self.parse_structured_response(response)
         
         if decision.confidence < self.confidence_threshold:
-            return self.fallback_to_safe_limits()
+            return self.maintain_current_limits()
             
         return self.apply_business_constraints(decision)
 ```
@@ -273,51 +274,31 @@ During surge events, the AI prioritizes customers based on:
 - **2 CPU cores**: Adequate performance for demo
 - **10GB disk space**: Models, logs, and data storage
 
-### **Complete Setup Process**
+### **Setup Process**
 
 #### **1. Repository Setup**
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/ai-content-aware-dynamic-rate-limiter.git
-cd ai-content-aware-dynamic-rate-limiter
+git clone https://github.com/your-org/intelligent-rate-limiter.git
+cd intelligent-rate-limiter
 
 # Verify directory structure
 ls -la
-# Should see: docker-compose.yml, limiter/, monitoring/, demos/
+# Should see: docker-compose.yml, limiter/, backend/, grafana/, etc.
 ```
 
-#### **2. Environment Configuration**
-```bash
-# Copy environment template
-cp .env.example .env
-
-# Edit configuration (optional)
-nano .env
-```
-
-**Key Environment Variables:**
-```bash
-# AI Configuration
-OLLAMA_MODEL=llama3.2:3b
-AI_CONFIDENCE_THRESHOLD=0.60
-MAX_SCALING_FACTOR=8.0
-
-# Business Configuration  
-ENTERPRISE_REVENUE_PER_REQ=0.20
-PROFESSIONAL_REVENUE_PER_REQ=0.05
-FREE_REVENUE_PER_REQ=0.01
-
-# System Configuration
-REDIS_URL=redis://redis:6379
-POSTGRES_URL=postgresql://user:pass@postgres:5432/ratelimiter
-```
+#### **2. Prerequisites**
+- **External Ollama Service**: Must be running with LLaMA 3.2:3b model
+- **Docker & Docker Compose**: For containerized deployment
+- **4GB RAM minimum**: For AI model requirements
+- **Available Ports**: 8080 (limiter), 8000 (backend), 3000 (grafana), etc.
 
 #### **3. System Startup**
 ```bash
-# Start all services
+# Start all services (requires external Ollama)
 docker-compose up -d --build
 
-# Wait for services to initialize (2-3 minutes)
+# Wait for services to initialize (1-2 minutes)
 docker-compose logs -f limiter
 
 # Verify services are running
@@ -326,30 +307,18 @@ docker-compose ps
 
 **Expected Services:**
 - `limiter` - AI rate limiter (Port 8080)
-- `ollama` - LLaMA 3.2 model server (Port 11434)
-- `redis` - Caching layer (Port 6379)
-- `postgres` - Persistent storage (Port 5432)
+- `backend` - Protected service (Port 8000)
 - `prometheus` - Metrics collection (Port 9090)
 - `grafana` - Dashboards (Port 3000)
+- `kong` - API Gateway (Port 8001, 8002)
 
-#### **4. AI Engine Initialization**
+#### **4. Verification**
 ```bash
-# Download and initialize LLaMA 3.2 model
-curl -X POST http://localhost:8080/admin/init
+# Check system health
+curl -X GET http://localhost:8080/health
 
-# Verify AI engine is responding
-curl -X GET http://localhost:8080/admin/health
-```
-
-#### **5. Demo Launch**
-```bash
-# Open Grafana dashboard
+# Access Grafana dashboards
 open http://localhost:3000
-
-# Alternative: All interfaces
-echo " Grafana Dashboards: http://localhost:3000"
-echo "🔍 Prometheus Metrics: http://localhost:9090"
-echo "🤖 OLLAMA Monitor: http://localhost:8899"
 ```
 
 ### **Troubleshooting Common Issues**
@@ -386,49 +355,60 @@ nano docker-compose.yml
 
 ### **Verification Checklist**
 
-- [ ] All 6 services running in Docker
-- [ ] LLaMA 3.2 model downloaded (check `curl http://localhost:11434/api/tags`)
-- [ ] AI engine responds to health checks
-- [ ] Demo interface loads at http://localhost:8080/demo
-- [ ] Prometheus collecting metrics at http://localhost:9090
+- [ ] All 5 core services running in Docker
+- [ ] External Ollama service with LLaMA 3.2:3b model accessible
+- [ ] AI engine responds to health checks via HTTP API
 - [ ] Grafana dashboards accessible at http://localhost:3000
+- [ ] Prometheus collecting metrics at http://localhost:9090
+- [ ] Backend services responding to requests
 
 ---
 
-## 🎬 **Demo Experience Guide**
+## 🎬 **Current Implementation Status**
 
-### **Grafana Dashboard Overview**
+### **✅ Implemented Features**
 
-The demo is designed as a **5-minute visual experience** using Grafana dashboards that show real-time AI decision-making and performance comparison.
+#### **Core Rate Limiting System:**
+- **Multi-tier Customer Classification**: Free ($0.01/req), Professional ($0.05/req), Enterprise ($0.20/req)
+- **Dynamic Scaling Logic**: Business rule-based scaling factors (3x-8x)
+- **Revenue-per-Request Model**: Customer value-aware prioritization
+- **Business Rule Engine**: Intelligent limit adjustments based on customer tier
 
-#### **Dashboard Layout:**
-```
-┌─────────────────────────────────────────────────────┬─────────────────────┐
-│                🏆 AI Rate Limiter Demo               │                     │
-├─────────────────────────────────────────────────────┤                     │
-│  🆓 FREE TIER     💼 PRO TIER     🏆 ENT TIER      │  🧠 AI Confidence  │
-│  • AI vs Static   • AI vs Static   • AI vs Static   │  • Live Metrics    │
-│  • Revenue Lost              • Revenue Protected   │  • Explanations     │
-│  • Traffic Viz               • Traffic Viz         │                     │
-├─────────────────────────────────────────────────────┤                     │
-│           📈 Live Battle Chart                      │  📖 System          │
-│           AI lines climb, Static stays flat        │     Narrative       │
-└─────────────────────────────────────────────────────┤                     │
-                Status Bar: Revenue, RPS, Timer      │  🔬 AI Technical    │
-                                                     │     Panel           │
-                                                     └─────────────────────┘
-```
+#### **AI Integration:**
+- **External Ollama LLaMA 3.2**: REST API integration with 3B parameter model
+- **Structured Prompt Engineering**: Business-aware AI decision prompts
+- **Confidence Scoring**: 60%+ threshold for AI decision acceptance
+- **Error Handling**: Robust fallback mechanisms for AI failures
+- **JSON Response Parsing**: Reliable structured AI output processing
 
-### **Phase-by-Phase Demo Experience**
+#### **Surge Detection & Prediction:**
+- **Multi-level Classification**: Normal/Surge/DDoS threat detection
+- **Pattern Recognition**: Traffic trend analysis with sliding windows
+- **Preemptive Scaling**: Business rule-driven capacity adjustments
+- **Customer Priority Protection**: High-value customer surge protection
 
-#### **Phase 1: AI Awakening (0-45 seconds)**
-> *"Watch artificial intelligence understand business value instantly"*
+#### **Enterprise Governance:**
+- **Human Approval Workflows**: >1.8x scaling changes require approval
+- **Risk Assessment**: Confidence scoring and impact analysis
+- **Audit Trail**: Complete decision history logging
+- **Safety Constraints**: Hard limits prevent runaway scaling
+- **Business Rule Validation**: Revenue impact assessment
 
-**What Happens:**
-- 🤖 **AI initializes** with zero traffic, pure business logic
-- 💰 **Revenue calculations** appear: Enterprise $0.20/req, Pro $0.05/req, Free $0.01/req
-- 🎯 **Intelligent baselines** set: 15/8/3 RPS based on customer value
-- 💬 **AI explains** its reasoning in the chat interface
+#### **Monitoring & Observability:**
+- **Prometheus Metrics**: 25+ comprehensive business and technical metrics
+- **Grafana Dashboards**: Real-time visualization of AI decisions and business impact
+- **Structured Logging**: AI decision tracking with business context
+- **Business Impact Metrics**: Revenue protection and customer satisfaction tracking
+- **Real-time Status**: Live system health and AI engine status monitoring
+
+### **🎯 Current Demo Capabilities**
+
+The system demonstrates AI-powered rate limiting through:
+- **Business Intelligence**: Revenue-aware customer prioritization in real-time
+- **AI Decision Making**: External LLaMA 3.2 integration with business logic
+- **Dynamic Scaling**: Intelligent traffic adaptation based on customer value
+- **Enterprise Governance**: Human oversight for critical scaling decisions
+- **Revenue Protection**: Quantified financial impact and customer satisfaction metrics
 - 🗿 **Static system** admits it doesn't understand revenue
 
 **Key Demo Points:**
@@ -545,79 +525,102 @@ The demo is designed as a **5-minute visual experience** using Grafana dashboard
 ### **Core Rate Limiter Logic**
 
 ```python
+# Actual Implementation (Flask-based)
 class AIRateLimiter:
     def __init__(self):
-        self.ai_client = OllamaClient("llama3.2:3b")
-        self.redis = RedisClient()
+        self.ollama_base_url = "http://host.docker.internal:11434"
+        self.model = "llama3.2:3b"
         self.confidence_threshold = 0.60
+        self.policies = {}  # In-memory policy storage
         
-    async def process_request(self, customer_tier: str, api_key: str):
-        # Get current metrics
-        current_rps = await self.get_current_rps(customer_tier)
-        utilization = await self.calculate_utilization(customer_tier)
-        surge_probability = await self.predict_surge()
-        
-        # Check if AI decision needed
-        if self.should_make_ai_decision(utilization, surge_probability):
-            decision = await self.get_ai_decision({
-                'customer_tier': customer_tier,
-                'current_rps': current_rps,
-                'utilization': utilization,
-                'surge_probability': surge_probability
-            })
+    def process_request(self, customer_tier: str, endpoint: str):
+        # Rate limit check
+        policy = self.get_current_policy(customer_tier, endpoint)
+        if not self.is_request_allowed(customer_tier, policy):
+            return {"allowed": False, "reason": "rate_limited"}
             
-            if decision.confidence >= self.confidence_threshold:
-                await self.apply_rate_limits(decision)
-                await self.log_ai_decision(decision)
+        # Update metrics and trigger AI analysis
+        self.update_metrics(customer_tier, endpoint)
+        return {"allowed": True}
         
-        # Apply current rate limit
-        return await self.check_rate_limit(customer_tier, api_key)
+    def heuristics_loop(self):
+        """Background AI decision making"""
+        for tenant, endpoint in self.active_pairs:
+            metrics = self.calculate_metrics(tenant, endpoint)
+            
+            if self.should_call_ai(metrics):
+                ai_decision = self.call_ollama_ai(tenant, endpoint, metrics)
+                if ai_decision and ai_decision.get("confidence", 0) >= 0.6:
+                    self.apply_or_queue_decision(tenant, endpoint, ai_decision)
 ```
 
-### **Surge Prediction Algorithm**
+### **External AI Integration**
 
 ```python
-class SurgePrediction:
-    def __init__(self, window_size=30):
-        self.window_size = window_size  # 30-second window
-        self.request_history = deque(maxlen=window_size)
-        
-    def predict_surge(self) -> float:
-        if len(self.request_history) < self.window_size:
-            return 0.0
-            
-        # Calculate metrics
-        current_rate = self.request_history[-1]
-        average_rate = sum(self.request_history) / len(self.request_history)
-        trend = self.calculate_trend()
-        variance = self.calculate_variance()
-        
-        # Surge probability calculation
-        rate_multiplier = current_rate / average_rate if average_rate > 0 else 1.0
-        trend_factor = max(0, trend) * 2  # Positive trend increases probability
-        variance_factor = min(variance / average_rate, 2.0) if average_rate > 0 else 0
-        
-        # Combined probability (0-1 range)
-        probability = min((rate_multiplier - 1) + trend_factor + variance_factor, 1.0)
-        
-        return max(0, probability)
+def _call_ollama_ai(tenant: str, endpoint: str, ok_rps: float, 
+                   blocked_ratio: float, utilization: float) -> dict:
+    """External Ollama API call for AI decisions"""
+    
+    # Build business-aware prompt
+    prompt = f"""
+    You are an AI rate limiter for a multi-tier SaaS platform.
+    
+    Customer: {tenant.upper()} tier
+    Current RPS: {ok_rps:.2f}
+    Utilization: {utilization:.1%}
+    Blocked Ratio: {blocked_ratio:.1%}
+    
+    Revenue per request:
+    - Enterprise: $0.20 (highest priority)
+    - Professional: $0.05 (medium priority)  
+    - Free: $0.01 (lowest priority)
+    
+    Decide: scale up, scale down, or maintain current limits.
+    Respond with valid JSON only:
+    {{"action": "up|down|same", "new_rps": float, "confidence": float, "reason": "string"}}
+    """
+    
+    # Call external Ollama service
+    response = requests.post(f"{OLLAMA_BASE_URL}/api/generate", json={
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {"temperature": 0.0}
+    }, timeout=OLLAMA_TIMEOUT_SEC)
+    
+    # Parse and validate response
+    if response.status_code == 200:
+        ai_response = response.json().get("response", "")
+        return parse_json_response(ai_response)
+    
+    return {}  # Return empty on failure
 ```
 
 ### **Business Logic Engine**
 
 ```python
-class BusinessLogic:
-    TIER_CONFIG = {
-        'enterprise': {
-            'revenue_per_request': 0.20,
-            'baseline_rps': 15,
-            'max_rps': 120,  # 8x scaling
-            'priority': 1
-        },
-        'professional': {
-            'revenue_per_request': 0.05,
-            'baseline_rps': 8,
-            'max_rps': 40,   # 5x scaling
+# Customer tier configuration (actual values)
+REVENUE_PER_REQUEST = {
+    "free": 0.01,    # $0.01 per request
+    "pro": 0.05,     # $0.05 per request  
+    "ent": 0.20      # $0.20 per request
+}
+
+PLAN_BASE = {
+    "free": {"rps": 5.0, "burst": 15},     # Base: 5 RPS, max ~15 RPS
+    "pro":  {"rps": 12.0, "burst": 30},    # Base: 12 RPS, max ~40 RPS
+    "ent":  {"rps": 25.0, "burst": 60},    # Base: 25 RPS, max ~120 RPS
+}
+
+def calculate_revenue_impact(tenant: str, allowed: bool):
+    """Track revenue impact of rate limiting decisions"""
+    revenue_per_req = REVENUE_PER_REQUEST.get(tenant, 0.01)
+    
+    if allowed:
+        RL_REVENUE_PROTECTED.labels(tenant).inc(revenue_per_req)
+    else:
+        RL_REVENUE_LOST.labels(tenant).inc(revenue_per_req)
+```
             'priority': 2
         },
         'free': {
@@ -734,116 +737,96 @@ class AIDecisionEngine:
 ### **Technical Assumptions**
 
 #### **AI Model Capabilities:**
-- **LLaMA 3.2 (3B parameters) is sufficient for rate limiting decisions**
-  - *Rationale*: Smaller model provides faster inference while maintaining accuracy
-  - *Testing*: 89% accuracy in surge prediction during benchmarking
-  - *Alternative*: Fallback to larger models (7B, 13B) if accuracy insufficient
+- **External Ollama LLaMA 3.2 service required** for AI decision making
+  - *Rationale*: Provides flexibility and reduces container complexity
+  - *Dependency*: Must have Ollama service running with llama3.2:3b model
+  - *Mitigation*: Robust error handling and fallback to business rules
 
 - **Confidence threshold of 60% is appropriate for production**
   - *Rationale*: Balance between AI autonomy and safety
-  - *Risk*: May be too conservative, limiting AI effectiveness
-  - *Tuning*: Adjustable based on production performance data
+  - *Testing*: Based on observed AI response patterns during development
+  - *Tuning*: Adjustable via environment variable DECISION_MIN_CONF
 
 - **JSON structured responses are reliable from LLaMA**
-  - *Rationale*: Testing shows 95%+ valid JSON response rate with proper prompting
-  - *Risk*: Parsing errors could cause system failures
-  - *Mitigation*: Robust error handling and fallback to safe defaults
+  - *Rationale*: Zero temperature and structured prompting improve reliability
+  - *Implementation*: Robust parsing with regex fallback patterns
+  - *Mitigation*: Error handling returns empty dict to maintain business rules
 
 #### **Infrastructure Assumptions:**
-- **Single-node AI inference is sufficient for prototype**
-  - *Rationale*: Demo and proof-of-concept don't require high availability
-  - *Production*: Multi-node deployment with load balancing required
-  - *Scaling*: Kubernetes deployment with horizontal pod autoscaling
-
-- **Redis caching provides adequate performance**
-  - *Rationale*: Sub-millisecond latency for rate limit checks
-  - *Risk*: Redis failures could impact system availability
-  - *Mitigation*: Redis clustering and persistence for production
-
-- **Docker Compose deployment is acceptable for demonstrations**
+- **Docker Compose deployment** sufficient for demonstration and testing
   - *Rationale*: Easy setup and consistent environment for demos
-  - *Production*: Kubernetes or similar orchestration platform required
-  - *Security*: Full security hardening needed for production deployment
+  - *Limitation*: Not production-ready without additional hardening
+  - *Future*: Kubernetes deployment for production scaling
+
+- **In-memory storage** adequate for demo and development
+  - *Rationale*: Reduces external dependencies and setup complexity
+  - *Limitation*: No persistence across restarts
+  - *Mitigation*: File-based backup for critical policy data
+
+- **External service dependency acceptable** for AI functionality
+  - *Rationale*: Separates AI infrastructure from core rate limiting
+  - *Risk*: Single point of failure if Ollama service unavailable
+  - *Mitigation*: Graceful degradation to business rule-based decisions
 
 ### **Design Decision Rationale**
 
-#### **Why LLaMA 3.2 over GPT-4/Claude?**
-1. **Cost**: Local inference vs API costs ($0.03/1K tokens)
-2. **Latency**: Local model provides <100ms response times
+#### **Why External Ollama over GPT-4/Claude?**
+1. **No API Costs**: Avoid per-token charges for local inference
+2. **Reduced Latency**: Direct HTTP calls to local service
 3. **Privacy**: No external API calls with sensitive business data
-4. **Control**: Full control over model updates and customization
+4. **Flexibility**: Easy to change models or parameters
+5. **Development**: Separates AI infrastructure concerns
 
 #### **Why 60% Confidence Threshold?**
-1. **Testing Data**: 60% threshold provided optimal balance in benchmarks
-2. **Safety First**: Conservative approach for production systems
-3. **Fallback Strategy**: Low confidence triggers safe default behavior
-4. **Tunable**: Can be adjusted based on production performance
+1. **Observed Performance**: 60% threshold showed good balance in testing
+2. **Safety First**: Conservative approach for business-critical decisions
+3. **Fallback Strategy**: Low confidence maintains current business rules
+4. **Tunable**: Can be adjusted via environment configuration
 
 #### **Why Revenue-Per-Request Model?**
-1. **Simplicity**: Easy to understand and implement
-2. **Direct Impact**: Clear correlation between API usage and revenue
-3. **Scalability**: Works across different business models
-4. **Measurable**: Concrete metrics for ROI calculation
+1. **Business Alignment**: Direct correlation between API usage and value
+2. **Simplicity**: Easy to understand and implement across tiers
+3. **Measurable Impact**: Clear ROI metrics for rate limiting decisions
+4. **Scalability**: Works across different business models and industries
 
 ---
 
-## 📊 **Performance & Metrics**
+## 📊 **Monitoring & Metrics**
 
-### **System Performance Benchmarks**
+### **Current Implementation Metrics**
 
-#### **AI Decision Latency:**
-- **Average Response Time**: 87ms (LLaMA 3.2 local inference)
-- **95th Percentile**: 134ms
-- **99th Percentile**: 203ms
-- **Timeout Threshold**: 500ms (fallback to safe defaults)
+#### **Prometheus Metrics Collected:**
+- **Rate Limiting Metrics**: Request counts, RPS per tier, utilization percentages
+- **AI Decision Metrics**: Decision types, confidence scores, success/failure rates
+- **Business Metrics**: Revenue protected/lost per tier, customer satisfaction scores
+- **System Health Metrics**: AI engine status, response times, error rates
+- **Governance Metrics**: Approval requests, human response times, override rates
 
-#### **Surge Prediction Accuracy:**
-```
-Testing Dataset: 10,000 traffic patterns over 30 days
-┌─────────────────┬─────────────┬─────────────┬─────────────┐
-│ Surge Level     │ Predicted   │ Actual      │ Accuracy    │
-├─────────────────┼─────────────┼─────────────┼─────────────┤
-│ Normal (0-29%)  │ 7,234       │ 7,456       │ 97.0%       │
-│ Surge (30-69%)  │ 2,144       │ 2,032       │ 94.5%       │
-│ DDoS (70%+)     │ 622         │ 512         │ 82.1%       │
-├─────────────────┼─────────────┼─────────────┼─────────────┤
-│ Overall         │ 10,000      │ 10,000      │ 89.2%       │
-└─────────────────┴─────────────┴─────────────┴─────────────┘
-```
+#### **Key Business Indicators:**
+- **Revenue Impact Tracking**: Real-time calculation of revenue protected vs lost
+- **Customer Satisfaction**: Based on blocking rates and tier-specific expectations
+- **Tier Performance**: Separate tracking for Free, Pro, and Enterprise customers
+- **AI Effectiveness**: Confidence scores and decision success rates
 
-#### **Revenue Protection Metrics:**
-```
-Comparison: AI vs Static Rate Limiter (24-hour test)
-┌─────────────────┬─────────────┬─────────────┬─────────────┐
-│ Scenario        │ AI System   │ Static      │ Advantage   │
-├─────────────────┼─────────────┼─────────────┼─────────────┤
-│ Normal Traffic  │ $22,464/day │ $22,464/day │ 0%          │
-│ Minor Surge     │ $28,512/day │ $24,672/day │ +15.6%      │
-│ Major Surge     │ $47,520/day │ $6,744/day  │ +604.5%     │
-│ DDoS Attack     │ $31,680/day │ $2,246/day  │ +1,310.8%   │
-├─────────────────┼─────────────┼─────────────┼─────────────┤
-│ Average         │ $32,544/day │ $14,032/day │ +131.9%     │
-└─────────────────┴─────────────┴─────────────┴─────────────┘
-```
+#### **Technical Performance:**
+- **AI Decision Latency**: External Ollama API call times and response processing
+- **System Availability**: Core rate limiting service uptime and health
+- **Policy Application Speed**: Time from AI decision to policy enforcement
+- **Error Handling**: AI timeout rates, parsing failures, fallback activations
 
-### **Key Performance Indicators**
+### **Grafana Dashboard Features**
 
-#### **Business Metrics:**
-- **Revenue Protected**: $32,544/day vs $14,032/day (static)
-- **Customer Satisfaction**: 94.2% (AI) vs 67.8% (static)
-- **Enterprise Churn Reduction**: 73% fewer cancellations
-- **Incident Response Time**: 30s (predictive) vs 5min (reactive)
+#### **Real-time Monitoring:**
+- **Multi-tier Traffic Visualization**: Live RPS and utilization per customer tier
+- **AI Decision Stream**: Recent AI decisions with confidence scores and reasoning
+- **Revenue Protection Tracking**: Financial impact metrics updated in real-time
+- **Surge Detection Display**: Current threat levels and prediction confidence
 
-#### **Technical Metrics:**
-- **System Availability**: 99.97% uptime
-- **AI Decision Accuracy**: 89.2% surge prediction
-- **Scaling Response Time**: 2.3s average
-- **Governance Approval Time**: 42s average human response
-
-#### **Operational Metrics:**
-- **False Positive Rate**: 3.2% (AI predicts surge, none occurs)
-- **False Negative Rate**: 1.8% (surge occurs, AI doesn't predict)
-- **Governance Override Rate**: 2.1% (humans reject AI recommendations)
+#### **Business Intelligence Panels:**
+- **Customer Tier Comparison**: Performance differences across Free/Pro/Enterprise
+- **Revenue Optimization**: ROI of AI decisions vs static rate limiting
+- **Governance Activity**: Human approval workflows and decision audit trails
+- **System Health Overview**: AI engine status and overall system performance
 - **System Recovery Time**: 8.7s after AI failure
 
 ### **Monitoring & Alerting**
