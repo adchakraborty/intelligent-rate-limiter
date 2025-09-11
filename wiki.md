@@ -343,14 +343,13 @@ curl -X GET http://localhost:8080/admin/health
 
 #### **5. Demo Launch**
 ```bash
-# Open ultimate demo interface
-open http://localhost:8080/demo
+# Open Grafana dashboard
+open http://localhost:3000
 
-# Alternative: All demo interfaces
-echo "🚀 Ultimate Demo: http://localhost:8080/demo"
-echo "📊 Grafana Dashboards: http://localhost:3000"
+# Alternative: All interfaces
+echo " Grafana Dashboards: http://localhost:3000"
 echo "🔍 Prometheus Metrics: http://localhost:9090"
-echo "💬 AI Chat Interface: http://localhost:8080/chat"
+echo "🤖 OLLAMA Monitor: http://localhost:8899"
 ```
 
 ### **Troubleshooting Common Issues**
@@ -398,17 +397,17 @@ nano docker-compose.yml
 
 ## 🎬 **Demo Experience Guide**
 
-### **Ultimate Demo Interface Overview**
+### **Grafana Dashboard Overview**
 
-The demo is designed as a **5-minute cinematic experience** that tells the complete story of AI superiority over traditional rate limiting.
+The demo is designed as a **5-minute visual experience** using Grafana dashboards that show real-time AI decision-making and performance comparison.
 
-#### **Interface Layout:**
+#### **Dashboard Layout:**
 ```
 ┌─────────────────────────────────────────────────────┬─────────────────────┐
-│                Header: "AI vs Static Battle"        │                     │
+│                🏆 AI Rate Limiter Demo               │                     │
 ├─────────────────────────────────────────────────────┤                     │
-│  🗿 Static System     VS     🧠 AI System          │  💬 AI Chat         │
-│  • Fixed Limits              • Dynamic Scaling     │  • Live Decisions   │
+│  🆓 FREE TIER     💼 PRO TIER     🏆 ENT TIER      │  🧠 AI Confidence  │
+│  • AI vs Static   • AI vs Static   • AI vs Static   │  • Live Metrics    │
 │  • Revenue Lost              • Revenue Protected   │  • Explanations     │
 │  • Traffic Viz               • Traffic Viz         │                     │
 ├─────────────────────────────────────────────────────┤                     │

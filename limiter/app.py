@@ -6,7 +6,7 @@ import threading
 import logging
 import sys
 from typing import Dict, Tuple, Any, List
-from flask import Flask, request, jsonify, Response, render_template
+from flask import Flask, request, jsonify, Response
 import requests
 from prometheus_client import (
     Counter, Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST, REGISTRY
@@ -1096,11 +1096,6 @@ def demo_metrics():
         "interval_sec": HEURISTIC_EVERY_SEC
     })
 
-@app.get("/demo/ultimate")
-def ultimate_demo():
-    """Ultimate demo dashboard route"""
-    return render_template("ultimate_demo.html")
-
 def _proxy_backend(path: str):
     try:
         response = requests.get(f"{BACKEND_BASE_URL}{path}", timeout=3)
@@ -1330,14 +1325,9 @@ def surge_status():
         "surge_algorithm": "multi_level_pattern_analysis"
     })
 
-@app.get("/demo")
-def demo_redirect():
-    """Redirect /demo to Ultimate Demo"""
-    return render_template("ultimate_demo.html")
-
 @app.get("/api/demo/status")
 def demo_status():
-    """Real-time demo status for Ultimate Demo HTML"""
+    """Real-time demo status API"""
     with state_lock:
         total_policies = len(policies)
         total_pending = len(pending_decisions)

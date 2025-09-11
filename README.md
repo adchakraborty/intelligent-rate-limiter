@@ -57,8 +57,8 @@ docker-compose up -d --build
 # Initialize AI engine
 curl -X POST http://localhost:8080/admin/init
 
-# Launch Ultimate Demo
-open http://localhost:8080/demo
+# Access Grafana Dashboard
+open http://localhost:3000
 ```
 
 ### **🎭 Demo Experience:**
@@ -179,14 +179,14 @@ open http://localhost:8080/demo
 
 ## 🎬 **What Our Demo Shows**
 
-### **🎭 Ultimate Demo Experience (5 minutes):**
+### **🎭 Grafana Dashboard Demo (5 minutes):**
 
 **Phase 1: AI Awakening (0-45s)**
 > *"Watch artificial intelligence set business-aware rate limits"*
 - 🤖 **LLaMA 3.2 initializes** with zero traffic, pure business logic
 - 💰 **Revenue calculations**: Enterprise $0.20/req, Pro $0.05/req, Free $0.01/req
 - 🎯 **Intelligent baselines**: 15/8/3 RPS based on customer value
-- 💬 **AI explains reasoning** in live chat interface
+- � **Visual metrics** in real-time Grafana dashboard
 
 **Phase 2: Traffic Intelligence (45s-2m)**
 > *"Real traffic triggers adaptive scaling across all tiers"*

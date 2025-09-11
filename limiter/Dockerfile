@@ -10,9 +10,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 
-# Copy Flask templates directory for Ultimate Demo HTML
-COPY templates/ ./templates/
-
 # Create log directory (consistent with backend)
 RUN mkdir -p /var/log/limiter && chmod 755 /var/log/limiter
 
