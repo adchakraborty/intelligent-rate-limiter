@@ -254,12 +254,5 @@ The system demonstrates AI-powered rate limiting through Grafana dashboards show
 
 For detailed technical documentation, setup guides, and architectural deep-dives, see our [Wiki](wiki.md).
 
----
-
-**🚀 Ready to see AI-powered rate limiting in action? Start the system and explore the Grafana dashboards!**
-
-*Built with ❤️ and 🤖 by the AI Infrastructure Team*
-
----
 
 **Note**: This system requires an external Ollama service running LLaMA 3.2:3b for AI functionality. The current implementation demonstrates business-aware rate limiting with real-time monitoring and enterprise governance features.
