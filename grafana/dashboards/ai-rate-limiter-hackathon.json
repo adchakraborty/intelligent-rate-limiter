@@ -1,354 +1,1004 @@
 {
-  "id": null,
-  "title": "🏆 AI Rate Limiter - Simple Demo",
-  "tags": ["ai", "rate-limiting", "hackathon", "simple"],
-  "timezone": "browser",
-  "refresh": "1s",
-  "time": {
-    "from": "now-3m",
-    "to": "now"
-  },
-  "panels": [
-    {
-      "id": 1,
-      "title": "🚀 Traffic vs Limits: AI vs Static",
-      "description": "THE KEY PANEL: Shows incoming traffic and how AI limits adapt vs static limits. This is your main story!",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "rl_real_time_rps",
-          "legendFormat": "{{tenant}} Incoming Traffic"
-        },
-        {
-          "expr": "rl_policy_rps",
-          "legendFormat": "AI {{tenant}} Limit"
-        },
-        {
-          "expr": "15",
-          "legendFormat": "Static ENT Limit"
-        },
-        {
-          "expr": "10",
-          "legendFormat": "Static PRO Limit"
-        },
-        {
-          "expr": "5",
-          "legendFormat": "Static FREE Limit"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "min": 0,
-          "max": 100,
-          "color": {"mode": "palette-classic"},
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 10
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {"id": "byRegexp", "options": ".*ent.*Traffic.*"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#00D9FF"}},
-              {"id": "custom.lineWidth", "value": 4},
-              {"id": "displayName", "value": "🏆 ENT Traffic"}
-            ]
-          },
-          {
-            "matcher": {"id": "byRegexp", "options": ".*pro.*Traffic.*"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FF6B35"}},
-              {"id": "custom.lineWidth", "value": 4},
-              {"id": "displayName", "value": "💼 PRO Traffic"}
-            ]
-          },
-          {
-            "matcher": {"id": "byRegexp", "options": ".*free.*Traffic.*"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FFBE0B"}},
-              {"id": "custom.lineWidth", "value": 4},
-              {"id": "displayName", "value": "🆓 FREE Traffic"}
-            ]
-          },
-          {
-            "matcher": {"id": "byRegexp", "options": "AI.*ent.*Limit"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#00B4D8"}},
-              {"id": "custom.lineStyle", "value": {"dash": [15, 5]}},
-              {"id": "custom.lineWidth", "value": 3},
-              {"id": "displayName", "value": "🤖 AI ENT Limit"}
-            ]
-          },
-          {
-            "matcher": {"id": "byRegexp", "options": "AI.*pro.*Limit"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#E63946"}},
-              {"id": "custom.lineStyle", "value": {"dash": [15, 5]}},
-              {"id": "custom.lineWidth", "value": 3},
-              {"id": "displayName", "value": "🤖 AI PRO Limit"}
-            ]
-          },
-          {
-            "matcher": {"id": "byRegexp", "options": "AI.*free.*Limit"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FB8500"}},
-              {"id": "custom.lineStyle", "value": {"dash": [15, 5]}},
-              {"id": "custom.lineWidth", "value": 3},
-              {"id": "displayName", "value": "🤖 AI FREE Limit"}
-            ]
-          },
-          {
-            "matcher": {"id": "byName", "options": "Static ENT Limit"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#8B5CF6"}},
-              {"id": "custom.lineStyle", "value": {"dash": [3, 3]}},
-              {"id": "custom.lineWidth", "value": 2}
-            ]
-          },
-          {
-            "matcher": {"id": "byName", "options": "Static PRO Limit"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#8B5CF6"}},
-              {"id": "custom.lineStyle", "value": {"dash": [3, 3]}},
-              {"id": "custom.lineWidth", "value": 2}
-            ]
-          },
-          {
-            "matcher": {"id": "byName", "options": "Static FREE Limit"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#8B5CF6"}},
-              {"id": "custom.lineStyle", "value": {"dash": [3, 3]}},
-              {"id": "custom.lineWidth", "value": 2}
-            ]
-          }
-        ]
-      },
-      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0}
+    "id": null,
+    "title": "🏆 AI Rate Limiter - Tier-by-Tier Demo",
+    "tags": [
+        "ai",
+        "rate-limiting",
+        "hackathon",
+        "tier-demo"
+    ],
+    "timezone": "browser",
+    "refresh": "1s",
+    "time": {
+        "from": "now-3m",
+        "to": "now"
     },
-    {
-      "id": 2,
-      "title": "🧠 AI Confidence",
-      "description": "AI decision confidence score - shows AI is making reliable decisions (>85% = good)",
-      "type": "gauge",
-      "targets": [
+    "schemaVersion": 30,
+    "version": 1,
+    "editable": true,
+    "panels": [
         {
-          "expr": "avg(rl_ai_confidence_score)",
-          "legendFormat": "AI Confidence"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "min": 0,
-          "max": 1,
-          "unit": "percentunit",
-          "thresholds": {
-            "steps": [
-              {"color": "red", "value": 0},
-              {"color": "yellow", "value": 0.7},
-              {"color": "green", "value": 0.85}
-            ]
-          }
-        }
-      },
-      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 12}
-    },
-    {
-      "id": 3,
-      "title": "🌊 Surge Analysis",
-      "description": "AI predicts traffic surges before they happen - shows predictive capability",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "rl_surge_prediction",
-          "legendFormat": "{{tenant}} Surge Probability"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "min": 0,
-          "max": 1,
-          "unit": "percentunit",
-          "color": {"mode": "palette-classic"}
-        },
-        "overrides": [
-          {
-            "matcher": {"id": "byRegexp", "options": ".*ent.*"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#00D9FF"}},
-              {"id": "displayName", "value": "🏆 ENT Surge"}
-            ]
-          },
-          {
-            "matcher": {"id": "byRegexp", "options": ".*pro.*"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FF6B35"}},
-              {"id": "displayName", "value": "💼 PRO Surge"}
-            ]
-          },
-          {
-            "matcher": {"id": "byRegexp", "options": ".*free.*"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FFBE0B"}},
-              {"id": "displayName", "value": "🆓 FREE Surge"}
-            ]
-          }
-        ]
-      },
-      "gridPos": {"h": 8, "w": 9, "x": 6, "y": 12}
-    },
-    {
-      "id": 4,
-      "title": "🏆 Governance Queue",
-      "description": "Governance decisions: pending vs auto-approved - shows enterprise governance in action",
-      "type": "stat",
-      "targets": [
-        {
-          "expr": "rl_governance_queue_size",
-          "legendFormat": "Pending Decisions"
-        },
-        {
-          "expr": "increase(rl_ai_decisions_total{applied=\"true\"}[1m])",
-          "legendFormat": "Auto-Approved (last min)"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "palette-classic"},
-          "custom": {"displayMode": "basic"},
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {"id": "byName", "options": "Pending Decisions"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "yellow"}},
-              {"id": "displayName", "value": "⏳ Pending"}
-            ]
-          },
-          {
-            "matcher": {"id": "byName", "options": "Auto-Approved (last min)"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
-              {"id": "displayName", "value": "✅ Approved"}
-            ]
-          }
-        ]
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "horizontal"
-      },
-      "gridPos": {"h": 8, "w": 9, "x": 15, "y": 12}
-    },
-    {
-      "id": 5,
-      "title": "📊 Current RPS: AI vs Static Kong Comparison",
-      "description": "Real-time RPS comparison table - Current Traffic, AI Limits, and Static Kong Limits",
-      "type": "table",
-      "targets": [
-        {
-          "expr": "rl_real_time_rps",
-          "legendFormat": "{{tenant}}",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "expr": "rl_policy_rps",
-          "legendFormat": "{{tenant}}",
-          "format": "table", 
-          "instant": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "custom": {
-            "displayMode": "color-background",
-            "align": "center"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {"id": "byName", "options": "Tenant"},
-            "properties": [
-              {"id": "custom.width", "value": 140},
-              {"id": "mappings", "value": [
-                {"options": {"ent": {"text": "🏆 Enterprise"}}, "type": "value"},
-                {"options": {"pro": {"text": "💼 Professional"}}, "type": "value"},
-                {"options": {"free": {"text": "🆓 Free"}}, "type": "value"}
-              ]}
-            ]
-          },
-          {
-            "matcher": {"id": "byName", "options": "Current RPS"},
-            "properties": [
-              {"id": "custom.width", "value": 120},
-              {"id": "color", "value": {"mode": "continuous-GrYlRd"}},
-              {"id": "custom.displayMode", "value": "color-background"}
-            ]
-          },
-          {
-            "matcher": {"id": "byName", "options": "AI Limit"},
-            "properties": [
-              {"id": "custom.width", "value": 100},
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#00D9FF"}},
-              {"id": "custom.displayMode", "value": "color-background"}
-            ]
-          },
-          {
-            "matcher": {"id": "byName", "options": "Static Kong Limit"},
-            "properties": [
-              {"id": "custom.width", "value": 140},
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "#8B5CF6"}},
-              {"id": "custom.displayMode", "value": "color-background"}
-            ]
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {}
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "__name__": true,
-              "Time": true,
-              "job": true,
-              "instance": true
+            "id": 1,
+            "title": "🆓 FREE TIER: AI vs Static",
+            "description": "AI scales 5→25+ RPS; static stuck at 5. Red = avoided static 429s.",
+            "type": "timeseries",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 0
             },
-            "renameByName": {
-              "tenant": "Tenant",
-              "Value #A": "Current RPS",
-              "Value #B": "AI Limit"
+            "targets": [
+                {
+                    "expr": "rl_real_time_rps{tenant=\"free\"}",
+                    "legendFormat": "📈 Free Traffic"
+                },
+                {
+                    "expr": "rl_policy_rps{tenant=\"free\"}",
+                    "legendFormat": "🤖 AI Limit"
+                },
+                {
+                    "expr": "5",
+                    "legendFormat": "🔒 Static 5"
+                },
+                {
+                    "expr": "increase(rl_blocked_requests_total{tenant=\"free\"}[30s])/30",
+                    "legendFormat": "❌ AI 429/s"
+                },
+                {
+                    "expr": "clamp_min(rl_real_time_rps{tenant=\"free\"} - 5, 0)",
+                    "legendFormat": "💥 Static 429/s (would)"
+                },
+                {
+                    "expr": "clamp_min(clamp_min(rl_real_time_rps{tenant=\"free\"} - 5,0) - increase(rl_blocked_requests_total{tenant=\"free\"}[30s])/30, 0)",
+                    "legendFormat": "🟢 Avoided 429/s"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "min": 0,
+                    "max": 50,
+                    "custom": {
+                        "lineWidth": 2,
+                        "fillOpacity": 10
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "📈 Free Traffic"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#FCD34D"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 4
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 15
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🤖 AI Limit"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#10B981"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        5
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🔒 Static 5"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#8B5CF6"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        5,
+                                        5
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "❌ AI 429/s"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#EF4444"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "💥 Static 429/s (would)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#DC2626"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 25
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🟢 Avoided 429/s"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#22C55E"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 10
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "lastNotNull",
+                        "max"
+                    ],
+                    "values": [
+                        "lastNotNull",
+                        "max"
+                    ]
+                }
             }
-          }
         },
         {
-          "id": "calculateField",
-          "options": {
-            "alias": "Static Kong Limit",
-            "mode": "binary",
-            "binary": {
-              "left": "Tenant",
-              "reducer": "sum",
-              "operator": "*",
-              "right": "0"
+            "id": 2,
+            "title": "💼 PRO TIER: AI vs Static",
+            "description": "AI scales 10→60+ RPS; static stuck at 10.",
+            "type": "timeseries",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 0
             },
-            "replaceFields": false
-          }
-        }
-      ],
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20}
+            "targets": [
+                {
+                    "expr": "rl_real_time_rps{tenant=\"pro\"}",
+                    "legendFormat": "📊 Pro Traffic"
+                },
+                {
+                    "expr": "rl_policy_rps{tenant=\"pro\"}",
+                    "legendFormat": "🤖 AI Limit"
+                },
+                {
+                    "expr": "10",
+                    "legendFormat": "🔒 Static 10"
+                },
+                {
+                    "expr": "increase(rl_blocked_requests_total{tenant=\"pro\"}[30s])/30",
+                    "legendFormat": "❌ AI 429/s"
+                },
+                {
+                    "expr": "clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10, 0)",
+                    "legendFormat": "💥 Static 429/s (would)"
+                },
+                {
+                    "expr": "clamp_min(clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10,0) - increase(rl_blocked_requests_total{tenant=\"pro\"}[30s])/30, 0)",
+                    "legendFormat": "🟢 Avoided 429/s"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "min": 0,
+                    "max": 80,
+                    "custom": {
+                        "lineWidth": 2,
+                        "fillOpacity": 10
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "📊 Pro Traffic"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#F97316"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 4
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 15
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🤖 AI Limit"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#059669"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        5
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🔒 Static 10"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#7C3AED"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        5,
+                                        5
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "❌ AI 429/s"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#EF4444"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "💥 Static 429/s (would)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#B91C1C"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 25
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🟢 Avoided 429/s"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#16A34A"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 10
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "lastNotNull",
+                        "max"
+                    ],
+                    "values": [
+                        "lastNotNull",
+                        "max"
+                    ]
+                }
+            }
+        },
+        {
+            "id": 3,
+            "title": "🏆 ENT TIER: AI vs Static",
+            "description": "AI scales 15→120+ RPS under governance; static stuck at 15.",
+            "type": "timeseries",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 0
+            },
+            "targets": [
+                {
+                    "expr": "rl_real_time_rps{tenant=\"ent\"}",
+                    "legendFormat": "🚀 Ent Traffic"
+                },
+                {
+                    "expr": "rl_policy_rps{tenant=\"ent\"}",
+                    "legendFormat": "🤖 AI Limit"
+                },
+                {
+                    "expr": "15",
+                    "legendFormat": "🔒 Static 15"
+                },
+                {
+                    "expr": "increase(rl_blocked_requests_total{tenant=\"ent\"}[30s])/30",
+                    "legendFormat": "❌ AI 429/s"
+                },
+                {
+                    "expr": "clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15, 0)",
+                    "legendFormat": "💥 Static 429/s (would)"
+                },
+                {
+                    "expr": "clamp_min(clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15,0) - increase(rl_blocked_requests_total{tenant=\"ent\"}[30s])/30, 0)",
+                    "legendFormat": "🟢 Avoided 429/s"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "min": 0,
+                    "max": 150,
+                    "custom": {
+                        "lineWidth": 2,
+                        "fillOpacity": 10
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🚀 Ent Traffic"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#06B6D4"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 4
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 15
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🤖 AI Limit"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#047857"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        5
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🔒 Static 15"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#6D28D9"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        5,
+                                        5
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "❌ AI 429/s"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#EF4444"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "💥 Static 429/s (would)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#991B1B"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🟢 Avoided 429/s"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#15803D"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 10
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "lastNotNull",
+                        "max"
+                    ],
+                    "values": [
+                        "lastNotNull",
+                        "max"
+                    ]
+                }
+            }
+        },
+    {
+            "id": 5,
+            "title": "🧠 AI CONFIDENCE",
+            "description": "AI confidence (target >85%).",
+            "type": "gauge",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+        "x": 0,
+        "y": 8
+            },
+            "targets": [
+                {
+                    "expr": "avg(rl_ai_confidence_score)",
+                    "legendFormat": "Confidence"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "max": 1,
+                    "unit": "percentunit",
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "#DC2626",
+                                "value": 0
+                            },
+                            {
+                                "color": "#FFBE0B",
+                                "value": 0.7
+                            },
+                            {
+                                "color": "#10B981",
+                                "value": 0.85
+                            }
+                        ]
+                    }
+                }
+            },
+            "options": {
+                "showThresholdLabels": true,
+                "showThresholdMarkers": true
+            }
+        },
+    {
+            "id": 6,
+            "title": "🌊 SURGE RISK & PREEMPTIVE SCALING",
+            "description": "Surge probability next window. 50% pre-warm, 70% scale-up, 90% critical.",
+            "type": "timeseries",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+        "x": 8,
+        "y": 8
+            },
+            "targets": [
+                {
+                    "expr": "rl_surge_prediction{tenant=\"free\"}",
+                    "legendFormat": "🆓 Free Risk"
+                },
+                {
+                    "expr": "rl_surge_prediction{tenant=\"pro\"}",
+                    "legendFormat": "💼 Pro Risk"
+                },
+                {
+                    "expr": "rl_surge_prediction{tenant=\"ent\"}",
+                    "legendFormat": "🏆 Ent Risk"
+                },
+                {
+                    "expr": "max(rl_surge_prediction)",
+                    "legendFormat": "🔥 Peak Risk"
+                },
+                {
+                    "expr": "0.5",
+                    "legendFormat": "⚠️ 50% Pre-warm"
+                },
+                {
+                    "expr": "0.7",
+                    "legendFormat": "🛡️ 70% Scale-up"
+                },
+                {
+                    "expr": "0.9",
+                    "legendFormat": "🚨 90% Critical"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "max": 1,
+                    "unit": "percentunit",
+                    "custom": {
+                        "lineWidth": 2,
+                        "fillOpacity": 20
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🆓 Free Risk"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#FCD34D"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "💼 Pro Risk"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#F97316"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🏆 Ent Risk"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#06B6D4"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🔥 Peak Risk"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#DC2626"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 4
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        8,
+                                        4
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "⚠️ 50% Pre-warm"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#f59e0b"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        4,
+                                        4
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🛡️ 70% Scale-up"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#dc2626"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        4,
+                                        4
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "🚨 90% Critical"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed",
+                                    "fixedColor": "#7f1d1d"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        2,
+                                        6
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "lastNotNull",
+                        "max"
+                    ],
+                    "values": [
+                        "lastNotNull",
+                        "max"
+                    ]
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            }
+        },
+    {
+            "id": 7,
+            "title": "🟢 AVOIDED 429s (Per Second)",
+            "description": "Current rate of static 429s being avoided by AI adaptive scaling.",
+            "type": "stat",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+        "x": 16,
+        "y": 8
+            },
+            "targets": [
+                {
+                    "expr": "sum(clamp_min(rl_real_time_rps - vector(5), 0) * on(tenant) group_left() (rl_real_time_rps{tenant=\"free\"} * 0 + 1)) + sum(clamp_min(rl_real_time_rps - vector(10), 0) * on(tenant) group_left() (rl_real_time_rps{tenant=\"pro\"} * 0 + 1)) + sum(clamp_min(rl_real_time_rps - vector(15), 0) * on(tenant) group_left() (rl_real_time_rps{tenant=\"ent\"} * 0 + 1))",
+                    "legendFormat": "TOTAL Avoided/sec"
+                },
+                {
+                    "expr": "clamp_min(rl_real_time_rps{tenant=\"free\"} - 5, 0)",
+                    "legendFormat": "Free Avoided/sec"
+                },
+                {
+                    "expr": "clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10, 0)",
+                    "legendFormat": "Pro Avoided/sec"
+                },
+                {
+                    "expr": "clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15, 0)",
+                    "legendFormat": "Ent Avoided/sec"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps"
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "TOTAL Avoided"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#22C55E"}},
+                            {"id": "displayName", "value": "Total Saved"}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "Free Avoided"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FCD34D"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "Pro Avoided"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#F97316"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "Ent Avoided"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#06B6D4"}}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "textMode": "value_and_name"
+            }
     }
-  ],
-  "schemaVersion": 30,
-  "version": 1,
-  "editable": true
+    ]
 }
