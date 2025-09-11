@@ -36,7 +36,7 @@ SCENARIOS = {
     "maintenance": LoadPattern("🌙 Low Traffic", 10, 3, 2, 1, "Maintenance window"),
     "enterprise": LoadPattern("🏆 Enterprise Priority", 30, 50, 20, 10, "Enterprise gets priority scaling", 2.0),
     
-    # 🏆 HACKATHON SPECIAL: Optimized for judges (2-2.5 min total)
+    # 🏆 HACKATHON SPECIAL: Optimized  (2-2.5 min total)
     "demo-fast": LoadPattern("⚡ Fast Demo", 45, 35, 20, 12, "Quick 45s demo - all features visible", 1.8),
     "demo-crisis": LoadPattern("🚨 Crisis Demo", 60, 80, 50, 30, "1-minute crisis simulation", 3.0),
 }
@@ -372,7 +372,7 @@ class HackathonLoadGenerator:
         print(f"{Colors.PURPLE}{'=' * 60}{Colors.END}")
         print(f"{Colors.WHITE}🎯 Showcasing AI vs Static Rate Limiting{Colors.END}")
         print(f"{Colors.WHITE}🚀 Real traffic → AI decisions → Revenue protection{Colors.END}")
-        print(f"{Colors.CYAN}⏱️  Duration: {duration_mins} minutes (perfect for judges!){Colors.END}")
+        print(f"{Colors.CYAN}⏱️  Duration: {duration_mins} minutes {Colors.END}")
         print(f"{Colors.YELLOW}📊 Dashboard sync: 1s refresh rate for smooth visualization{Colors.END}\n")
         
         await self.start_session()
@@ -410,7 +410,6 @@ class HackathonLoadGenerator:
                 print(f"\n{Colors.BOLD}{Colors.BLUE}🎬 {description}{Colors.END}")
                 print(f"{Colors.PURPLE}📊 Dashboard Phase {i}/3 - Check Grafana now!{Colors.END}")
                 
-                # Add narrative context for judges with dashboard guidance
                 if i == 1:
                     print(f"{Colors.WHITE}   👀 Watch Dashboard: Panel 1 (traffic), Panel 3 (AI confidence), Panel 7 (adaptive limits){Colors.END}")
                 elif i == 2:
@@ -440,7 +439,7 @@ class HackathonLoadGenerator:
             if self.running:
                 total_elapsed = time.time() - demo_start
                 print(f"\n{Colors.BOLD}{Colors.GREEN}🏁 HACKATHON DEMO COMPLETE! ({total_elapsed:.1f}s total){Colors.END}")
-                print(f"{Colors.GREEN}🎯 Perfect timing for judges - check Grafana for visual proof!{Colors.END}")
+                print(f"{Colors.GREEN}🎯  check Grafana for visual proof!{Colors.END}")
                 print(f"{Colors.GREEN}📊 Dashboard: http://localhost:3000 (AI vs Static comparison){Colors.END}")
                 print(f"{Colors.PURPLE}🏆 Key Demo Points Covered:{Colors.END}")
                 print(f"{Colors.WHITE}   ✅ AI learns and adapts to real traffic patterns{Colors.END}")
