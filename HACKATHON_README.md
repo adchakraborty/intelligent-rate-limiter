@@ -243,6 +243,4 @@ python load_generator.py --check
 
 ---
 
-**🏆 Ready to win the hackathon!** 🚀
-
 For questions or issues: Check the logs with `docker-compose logs -f limiter`
