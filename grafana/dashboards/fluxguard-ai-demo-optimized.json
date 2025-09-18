@@ -262,24 +262,24 @@
         },
         {
             "id": 6,
-            "title": "🛡️ AI PROTECTION (Saves/Min)",
-            "description": "Requests saved by AI dynamic limits vs static limits",
+            "title": "🛡️ AI PROTECTION (Total Saves)",
+            "description": "Total requests saved by AI dynamic limits vs static limits during session",
             "type": "stat",
             "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
             "targets": [
                 {
-                    "expr": "max(rate(rl_ai_saves_total{tenant=\"free\"}[1m])) * 60 or vector(0)",
-                    "legendFormat": "Free Saves",
+                    "expr": "max(rl_ai_saves_total{tenant=\"free\"}) or vector(0)",
+                    "legendFormat": "Free Total Saves",
                     "datasource": {"type": "prometheus", "uid": "prometheus"}
                 },
                 {
-                    "expr": "max(rate(rl_ai_saves_total{tenant=\"pro\"}[1m])) * 60 or vector(0)",
-                    "legendFormat": "Pro Saves",
+                    "expr": "max(rl_ai_saves_total{tenant=\"pro\"}) or vector(0)",
+                    "legendFormat": "Pro Total Saves",
                     "datasource": {"type": "prometheus", "uid": "prometheus"}
                 },
                 {
-                    "expr": "max(rate(rl_ai_saves_total{tenant=\"ent\"}[1m])) * 60 or vector(0)",
-                    "legendFormat": "Enterprise Saves",
+                    "expr": "max(rl_ai_saves_total{tenant=\"ent\"}) or vector(0)",
+                    "legendFormat": "Enterprise Total Saves",
                     "datasource": {"type": "prometheus", "uid": "prometheus"}
                 }
             ],
@@ -291,21 +291,21 @@
                 },
                 "overrides": [
                     {
-                        "matcher": {"id": "byName", "options": "Free Saves"},
+                        "matcher": {"id": "byName", "options": "Free Total Saves"},
                         "properties": [
                             {"id": "color", "value": {"mode": "fixed", "fixedColor": "#73BF69"}},
                             {"id": "displayName", "value": "🆓 Free"}
                         ]
                     },
                     {
-                        "matcher": {"id": "byName", "options": "Pro Saves"},
+                        "matcher": {"id": "byName", "options": "Pro Total Saves"},
                         "properties": [
                             {"id": "color", "value": {"mode": "fixed", "fixedColor": "#56A64B"}},
                             {"id": "displayName", "value": "💼 Pro"}
                         ]
                     },
                     {
-                        "matcher": {"id": "byName", "options": "Enterprise Saves"},
+                        "matcher": {"id": "byName", "options": "Enterprise Total Saves"},
                         "properties": [
                             {"id": "color", "value": {"mode": "fixed", "fixedColor": "#37872D"}},
                             {"id": "displayName", "value": "🏆 Enterprise"}

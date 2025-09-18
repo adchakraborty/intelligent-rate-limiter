@@ -434,11 +434,12 @@ Respond with JSON only:
     for attempt in range(OLLAMA_MAX_RETRIES):
         try:
             # Log the request with structured format for Loki
-            logger.info(
+            logger.warning(
                 f"OLLAMA_REQUEST tenant={tenant} endpoint={endpoint} attempt={attempt+1} "
                 f"scenario={scenario} ok_rps={ok_rps:.2f} blocked_ratio={blocked_ratio:.2%} "
                 f"utilization={utilization:.2%} prompt_tokens={prompt_tokens}"
             )
+            logger.warning(f"🔍 OLLAMA PROMPT (attempt {attempt+1}): {prompt[:200]}...")
             _track_log_entry("INFO", "ai_call", tenant)
             
             # SHORTER timeout for faster retries
@@ -949,29 +950,38 @@ def _heuristics_loop():
             
             # CRITICAL: ALWAYS call AI when there's ANY traffic (DEMO MODE)
             if total_requests <= 0:  # FIXED: Only skip if absolutely zero activity
+                logger.debug(f"⏭️ SKIPPING AI: {tenant}/{endpoint} - No traffic ({total_requests} requests)")
                 continue
             
-            logger.info(f"🤖 AI CALL TRIGGERED: {tenant}/{endpoint} - {total_requests:.3f} requests, {ok_rps:.2f} RPS, util:{utilization:.1%}")
-            logger.info(f"🎯 DEMO MODE: Forcing AI analysis for every traffic window")
+            logger.warning(f"🤖 AI CALL TRIGGERED: {tenant}/{endpoint} - {total_requests:.3f} requests, {ok_rps:.2f} RPS, util:{utilization:.1%}, blocked:{blocked_ratio:.1%}")
+            logger.warning(f"🎯 DEMO MODE: Forcing AI analysis for every traffic window")
+            logger.warning(f"📊 STATS SNAPSHOT: ok={ok_count}, blocked={blocked_count}, window={window:.1f}s, policy_rps={policy_rps}")
+            logger.warning(f"⚙️ CURRENT POLICY: rps={current_policy.get('rps', 'unknown')}, burst={current_policy.get('burst', 'unknown')}")
             
             # ENHANCED AI DECISION with better error handling
             ai_raw = {}
             ai_decision = {}
             
             try:
+                logger.warning(f"🔄 CALLING OLLAMA: {tenant}/{endpoint} - URL: {OLLAMA_BASE_URL}, Model: {OLLAMA_MODEL}")
                 ai_raw = _call_ollama_ai(tenant, endpoint, ok_rps, blocked_ratio, utilization)
+                logger.warning(f"🔍 OLLAMA RESPONSE: {tenant}/{endpoint} - Raw: {ai_raw}")
+                
                 if ai_raw:  # Only validate if we got a response
                     ai_decision = _validate_ai_decision(ai_raw, current_policy.get("rps", 10.0), current_policy.get("burst", 30))
+                    logger.warning(f"✅ AI DECISION VALIDATED: {tenant}/{endpoint} - Decision: {ai_decision}")
                 else:
-                    logger.warning(f"⚠️ AI CALL EMPTY: {tenant}/{endpoint} - No response from OLLAMA")
+                    logger.error(f"⚠️ AI CALL EMPTY: {tenant}/{endpoint} - No response from OLLAMA")
             except Exception as e:
                 logger.error(f"💥 AI CALL ERROR: {tenant}/{endpoint} - {e}")
+                logger.error(f"🔴 EXCEPTION DETAILS: {type(e).__name__}: {str(e)}")
                 ai_decision = {}  # Ensure it's empty on error
             
             # IMPROVED: AI engine status and decision handling
             if ai_decision and ai_decision.get("action") in ("up", "down", "same"):
                 RL_AI_ENGINE_ACTIVE.set(1)  # AI is working
-                logger.info(f"🤖 AI ENGINE ACTIVE: Decision made for {tenant}/{endpoint}")
+                logger.warning(f"🤖 AI ENGINE ACTIVE: Decision made for {tenant}/{endpoint} - Action: {ai_decision.get('action')}")
+                logger.warning(f"🎯 AI DECISION DETAILS: RPS: {ai_decision.get('new_rps')}, Burst: {ai_decision.get('new_burst')}, Confidence: {ai_decision.get('confidence')}")
                 
                 # UPDATED: Recalculate satisfaction with AI boost now that we have ai_decision
                 ai_boost = 0.1  # AI made a decision
@@ -987,7 +997,7 @@ def _heuristics_loop():
             else:
                 # MORE RESILIENT: Don't completely fail, just log and use current policy
                 RL_AI_ENGINE_ACTIVE.set(0.5)  # Partial AI operation (trying but failing)
-                logger.warning(f"⚠️ AI DECISION INCOMPLETE: {tenant}/{endpoint} - Using current policy")
+                logger.error(f"⚠️ AI DECISION INCOMPLETE: {tenant}/{endpoint} - Using current policy, ai_decision={ai_decision}")
                 
                 # Create a "maintain" decision to keep current policy
                 ai_decision = {
@@ -997,7 +1007,7 @@ def _heuristics_loop():
                     "confidence": 0.5,
                     "reason": "ai_fallback_maintain"
                 }
-                logger.info(f"🔄 FALLBACK APPLIED: {tenant}/{endpoint} - Maintaining current limits")
+                logger.warning(f"🔄 FALLBACK APPLIED: {tenant}/{endpoint} - Maintaining current limits")
             
             # Apply AI decision with governance
             result = _apply_or_queue(
@@ -1009,7 +1019,7 @@ def _heuristics_loop():
                 ai_decision["reason"]
             )
             
-            logger.info(f"✅ AI DECISION RESULT: {tenant}/{endpoint} - {result}")
+            logger.warning(f"✅ AI DECISION RESULT: {tenant}/{endpoint} - {result}")
         
         # Update comprehensive system health metrics after processing all pairs
         _update_system_health()
