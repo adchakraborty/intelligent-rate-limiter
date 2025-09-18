@@ -529,6 +529,14 @@ class HackathonLoadGenerator:
         transition_pause = 3  # Longer pause for dashboard to catch up
         
         try:
+            # Reset demo state for clean start
+            print(f"{Colors.CYAN}📊 Resetting demo state for fresh start...{Colors.END}")
+            try:
+                await self.session.post(f"{self.api_base}/api/demo/reset")
+                await asyncio.sleep(1)  # Brief pause for reset to complete
+            except Exception as e:
+                print(f"{Colors.YELLOW}⚠️ Reset warning: {e}{Colors.END}")
+            
             # 🎬 SIMPLE DASHBOARD 3-Act Demo Structure for 6-panel visualization
             demo_sequence = [
                 ("startup", f"🌅 ACT I: AI Learning ({phase_duration}s)", "Watch CURRENT TRAFFIC vs AI DYNAMIC LIMITS panels"), 
@@ -624,6 +632,14 @@ class HackathonLoadGenerator:
         await self.start_session()
         
         try:
+            # Reset demo state for clean start
+            print(f"{Colors.CYAN}📊 Resetting demo state for fresh start...{Colors.END}")
+            try:
+                await self.session.post(f"{self.api_base}/api/demo/reset")
+                await asyncio.sleep(1)  # Brief pause for reset to complete
+            except Exception as e:
+                print(f"{Colors.YELLOW}⚠️ Reset warning: {e}{Colors.END}")
+            
             # 🎬 5-Phase Comprehensive Demo Structure
             phases = [
                 ("startup", "🌅 Phase 1: AI Initialization", 45, "Watch AI learn baseline patterns and set intelligent limits"),

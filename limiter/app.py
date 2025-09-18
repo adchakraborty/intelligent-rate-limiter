@@ -1537,6 +1537,15 @@ def demo_reset():
         # Reset stats
         for pair in stats:
             stats[pair] = {"ok": 0.0, "blocked": 0.0, "since": _now()}
+        
+        # Reset AI saves counter to start fresh
+        for tenant in ("free", "pro", "ent"):
+            RL_AI_SAVES_TOTAL.labels(tenant)._value._value = 0
+            # Reset governance auto-approvals
+            RL_GOVERNANCE_AUTO_APPROVALS.labels(tenant)._value._value = 0
+        
+        # Reset decision history for clean slate
+        decision_history.clear()
     
     logger.info("🎬 DEMO RESET: All systems restored to baseline")
     return jsonify({"status": "reset", "message": "Demo reset to baseline state"})
