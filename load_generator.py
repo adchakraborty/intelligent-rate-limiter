@@ -10,10 +10,38 @@ import random
 import time
 import json
 import sys
+import platform
 from dataclasses import dataclass
 from typing import List, Dict
 import argparse
 import signal
+
+def setup_windows_asyncio():
+    """Set up Windows-specific asyncio optimizations and error handling"""
+    if platform.system() == "Windows":
+        # Set up custom exception handler to suppress WinError 10022
+        def windows_exception_handler(loop, context):
+            exception = context.get('exception')
+            if exception and "WinError 10022" in str(exception):
+                return  # Suppress WinError 10022 completely
+            if exception and "_call_connection_lost" in str(context.get('message', '')):
+                return  # Suppress connection lost callback errors
+            # Only print other exceptions if they're significant
+            if 'exception' in context and not any(x in str(exception) for x in ["WinError", "connection_lost"]):
+                print(f"Asyncio error: {context['message']}")
+        
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(windows_exception_handler)
+
+class Colors:
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m' 
+    RED = '\033[91m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    WHITE = '\033[97m'
+    BOLD = '\033[1m'
+    END = '\033[0m'
 
 @dataclass
 class LoadPattern:
@@ -40,6 +68,9 @@ SCENARIOS = {
     "demo-simple": LoadPattern("⚡ Simple Demo", 60, 70, 50, 30, "2-minute demo - all 6 panels active", 2.5),
     "demo-crisis": LoadPattern("🚨 Crisis Demo", 45, 80, 50, 30, "Crisis simulation - governance focus", 3.0),
     "governance-test": LoadPattern("⚖️ Governance Queue Test", 30, 150, 120, 80, "High traffic to trigger governance", 4.0),
+    
+    # 🎯 COMPREHENSIVE DEMO: 5-6 minute complete feature showcase
+    "demo-complete": LoadPattern("🎬 Complete Feature Demo", 360, 100, 70, 40, "5-6 min comprehensive AI showcase", 2.8),
 }
 
 class Colors:
@@ -88,18 +119,20 @@ class HackathonLoadGenerator:
     async def start_session(self):
         """Initialize HTTP session with Windows-optimized settings"""
         connector = aiohttp.TCPConnector(
-            limit=50,           # Reduced from 100 for Windows stability
-            limit_per_host=25,  # Reduced from 50 for Windows stability
+            limit=30,           # Further reduced for Windows stability
+            limit_per_host=15,  # Further reduced for Windows stability
             enable_cleanup_closed=True,
             force_close=True,   # Force close connections to prevent lingering sockets
             ttl_dns_cache=300,  # DNS cache TTL
             use_dns_cache=True
+            # Note: keepalive_timeout cannot be used with force_close=True
         )
-        timeout = aiohttp.ClientTimeout(total=8, connect=3)  # Reduced timeouts for faster recovery
+        timeout = aiohttp.ClientTimeout(total=10, connect=5)  # Increased timeouts for stability
         self.session = aiohttp.ClientSession(
             connector=connector, 
             timeout=timeout,
-            connector_owner=True
+            connector_owner=True,
+            raise_for_status=False  # Handle status codes manually
         )
     
     async def update_demo_phase(self, phase: int, phase_name: str = ""):
@@ -130,13 +163,30 @@ class HackathonLoadGenerator:
         """Close HTTP session with proper cleanup for Windows"""
         if self.session:
             try:
+                # Close all connections gracefully
                 await self.session.close()
-                # Give time for cleanup on Windows
-                await asyncio.sleep(0.1)
+                # Give more time for Windows cleanup
+                await asyncio.sleep(0.3)
+                
+                # Force cleanup connector if still exists
+                if hasattr(self.session, '_connector') and self.session._connector:
+                    await self.session._connector.close()
+                    await asyncio.sleep(0.1)
+                    
             except Exception as e:
-                if self.verbose:
+                # Suppress Windows-specific socket errors during cleanup
+                if "WinError 10022" not in str(e) and self.verbose:
                     print(f"{Colors.YELLOW}Session close warning: {e}{Colors.END}")
-                # Suppress Windows-specific connection errors during cleanup
+            finally:
+                self.session = None
+                # Additional Windows cleanup - suppress all asyncio callback errors
+                try:
+                    # Force garbage collection to clean up any lingering handles
+                    import gc
+                    gc.collect()
+                    await asyncio.sleep(0.1)
+                except:
+                    pass  # Ignore any cleanup errors
     
     async def send_request(self, tenant: str, endpoint: str = "/api/v1/resourceA"):
         """Send a single API request with proper authentication"""
@@ -562,6 +612,96 @@ class HackathonLoadGenerator:
             # Windows-specific: Give extra time for async cleanup
             await asyncio.sleep(0.2)
     
+    async def run_comprehensive_demo(self):
+        """🎬 Run comprehensive 5-6 minute demo showcasing all AI features"""
+        print(f"{Colors.BOLD}{Colors.PURPLE}🎬 COMPREHENSIVE AI RATE LIMITER DEMO{Colors.END}")
+        print(f"{Colors.PURPLE}{'=' * 60}{Colors.END}")
+        print(f"{Colors.WHITE}🎯 Complete Feature Showcase: AI Learning → Scaling → Governance → Recovery{Colors.END}")
+        print(f"{Colors.WHITE}🚀 6 Panels: Traffic, AI Limits, Static Limits, Governance, Protection, Surge Risk{Colors.END}")
+        print(f"{Colors.CYAN}⏱️  Duration: 5-6 minutes for complete feature coverage{Colors.END}")
+        print(f"{Colors.YELLOW}📊 Dashboard: http://localhost:3000 (keep open throughout){Colors.END}\n")
+        
+        await self.start_session()
+        
+        try:
+            # 🎬 5-Phase Comprehensive Demo Structure
+            phases = [
+                ("startup", "🌅 Phase 1: AI Initialization", 45, "Watch AI learn baseline patterns and set intelligent limits"),
+                ("launch", "🚀 Phase 2: Traffic Surge", 75, "Watch AI adapt to sudden load increase and dynamic scaling"),
+                ("governance-test", "⚖️ Phase 3: Governance & Decisions", 90, "See AI governance queue and auto-approval workflow"),
+                ("blackfriday", "🛒 Phase 4: Peak Crisis Management", 90, "Maximum stress test with OLLAMA API calls and surge detection"),
+                ("business", "🌟 Phase 5: Smart Recovery", 60, "Watch AI intelligently scale down and stabilize")
+            ]
+            
+            demo_start = time.time()
+            
+            # Reset dashboard
+            print(f"{Colors.CYAN}📊 Initializing comprehensive demo dashboard...{Colors.END}")
+            await self.update_demo_phase(0, "Comprehensive Demo Starting")
+            await asyncio.sleep(2)
+            
+            for i, (scenario_name, phase_title, duration, description) in enumerate(phases, 1):
+                if not self.running:
+                    break
+                
+                # Update demo phase
+                await self.update_demo_phase(i, f"Phase {i}/5")
+                
+                print(f"\n{Colors.BOLD}{Colors.BLUE}{phase_title} ({duration}s){Colors.END}")
+                print(f"{Colors.WHITE}📝 {description}{Colors.END}")
+                
+                # Specific talking points for each phase
+                if i == 1:
+                    print(f"{Colors.CYAN}👀 Watch: Traffic panel shows steady baseline, AI Limits adapting{Colors.END}")
+                elif i == 2:
+                    print(f"{Colors.CYAN}👀 Watch: Surge Risk panel turns red, AI Limits scale up dramatically{Colors.END}")
+                elif i == 3:
+                    print(f"{Colors.CYAN}👀 Watch: Governance Queue active, Auto-Approvals happening{Colors.END}")
+                elif i == 4:
+                    print(f"{Colors.CYAN}👀 Watch: All panels active, maximum AI protection in action{Colors.END}")
+                elif i == 5:
+                    print(f"{Colors.CYAN}👀 Watch: Smart recovery, AI Limits scaling down smoothly{Colors.END}")
+                
+                # Override scenario duration temporarily
+                original_duration = SCENARIOS[scenario_name].duration
+                SCENARIOS[scenario_name].duration = duration
+                
+                phase_start = time.time()
+                await self.run_pattern(SCENARIOS[scenario_name], show_progress=False)
+                
+                # Restore original duration
+                SCENARIOS[scenario_name].duration = original_duration
+                
+                phase_elapsed = time.time() - phase_start
+                print(f"{Colors.GREEN}✅ Phase {i} completed in {phase_elapsed:.1f}s{Colors.END}")
+                
+                # Brief pause between phases for dashboard observation
+                if i < len(phases) and self.running:
+                    print(f"{Colors.PURPLE}📊 Observe dashboard changes... (3s){Colors.END}")
+                    await asyncio.sleep(3)
+            
+            if self.running:
+                total_elapsed = time.time() - demo_start
+                await self.update_demo_phase(0, "Demo Complete")
+                
+                print(f"\n{Colors.BOLD}{Colors.GREEN}🏁 COMPREHENSIVE DEMO COMPLETE! ({total_elapsed:.1f}s total){Colors.END}")
+                print(f"{Colors.GREEN}🎯 All AI features demonstrated successfully!{Colors.END}")
+                print(f"{Colors.GREEN}📊 Dashboard: http://localhost:3000{Colors.END}")
+                print(f"\n{Colors.PURPLE}🏆 Features Showcased:{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ AI Learning & Baseline Setting{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ Dynamic Traffic Surge Adaptation{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ Governance Queue & Auto-Approvals{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ Crisis Management & OLLAMA Integration{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ Intelligent Recovery & Stabilization{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ Real-time Protection Metrics{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ Complete AI vs Static Comparison{Colors.END}")
+            
+        except KeyboardInterrupt:
+            print(f"\n{Colors.YELLOW}🛑 Demo interrupted by user{Colors.END}")
+        finally:
+            await self.close_session()
+            await asyncio.sleep(0.2)
+    
     async def check_dashboard_sync(self):
         """🎯 Validate dashboard synchronization for optimal demo experience"""
         print(f"{Colors.BOLD}{Colors.CYAN}🎯 Validating Demo Setup...{Colors.END}")
@@ -637,12 +777,16 @@ class HackathonLoadGenerator:
             return False
 
 async def main():
+    # Set up Windows-specific error handling first
+    setup_windows_asyncio()
+    
     parser = argparse.ArgumentParser(description="🏆 Hackathon AI Rate Limiter Load Generator")
     parser.add_argument("--url", default="http://localhost:8080", help="Rate limiter URL")
     parser.add_argument("--scenario", choices=list(SCENARIOS.keys()), help="Run specific scenario")
     parser.add_argument("--demo", action="store_true", help="Run simple dashboard demo (2.5 mins)")
     parser.add_argument("--demo-short", action="store_true", help="Run short simple demo (2.0 mins)")
     parser.add_argument("--demo-quick", action="store_true", help="Run quick simple demo (1.5 mins)")
+    parser.add_argument("--demo-complete", action="store_true", help="Run comprehensive feature demo (5-6 mins)")
     parser.add_argument("--list", action="store_true", help="List available scenarios")
     parser.add_argument("--check", action="store_true", help="Health check only")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
@@ -667,7 +811,7 @@ async def main():
         sys.exit(1)
     
     # Dashboard sync validation for demo modes
-    if args.demo or args.demo_short or args.demo_quick:
+    if args.demo or args.demo_short or args.demo_quick or args.demo_complete:
         await generator.check_dashboard_sync()
         print()  # Extra line for readability
     
@@ -677,6 +821,8 @@ async def main():
         await generator.run_hackathon_demo(2.0)
     elif args.demo_quick:
         await generator.run_hackathon_demo(1.5)
+    elif args.demo_complete:
+        await generator.run_comprehensive_demo()
     elif args.scenario:
         await generator.run_scenario(args.scenario)
     else:

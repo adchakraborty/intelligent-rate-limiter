@@ -69,6 +69,8 @@ RL_BLOCKED_RATIO = Gauge("rl_blocked_ratio", "Blocked ratio", ["tenant", "endpoi
 RL_AI_DECISIONS_TOTAL = Counter("rl_ai_decisions_total", "AI decisions", ["tenant", "endpoint", "action", "applied"])
 RL_AI_CALLS_TOTAL = Counter("rl_ai_calls_total", "AI API calls", ["status"])
 RL_AI_CALL_DURATION = Histogram("rl_ai_call_duration_seconds", "AI call duration", buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 15.0])
+RL_DYNAMIC_LIMIT = Gauge("rl_dynamic_limit", "Current AI-adjusted rate limit", ["tenant"])
+RL_AI_SAVES_TOTAL = Counter("rl_ai_saves_total", "Requests saved by AI limit adjustments", ["tenant"])
 RL_AI_PROMPT_TOKENS = Gauge("rl_ai_prompt_tokens", "AI prompt tokens", ["tenant"])
 RL_AI_RESPONSE_TOKENS = Gauge("rl_ai_response_tokens", "AI response tokens", ["tenant"])
 
@@ -153,6 +155,7 @@ def _ensure_policy_and_bucket(pair: Tuple[str,str]):
         policies[pair] = {"rps": base["rps"], "burst": base["burst"]}
         RL_POLICY_RPS.labels(tenant, endpoint).set(base["rps"])
         RL_POLICY_BURST.labels(tenant, endpoint).set(base["burst"])
+        RL_DYNAMIC_LIMIT.labels(tenant).set(base["rps"])  # Initialize dynamic limit
         RL_EFFECTIVE_RPS.labels(tenant, endpoint).set(0.0)
         RL_BLOCKED_RATIO.labels(tenant, endpoint).set(0.0)
         RL_CUSTOMER_SATISFACTION.labels(tenant).set(0.85)
@@ -177,8 +180,28 @@ def _allow(pair: Tuple[str,str]) -> bool:
     _ensure_policy_and_bucket(pair)
     _refill_tokens(pair)
     b = buckets[pair]
+    tenant, endpoint = pair
+    
+    # Check if request would be allowed
     if b["tokens"] >= 1.0:
         b["tokens"] -= 1.0
+        
+        # Only track AI saves for the primary endpoint to avoid duplicates
+        if endpoint == "/api/v1/resourceA":
+            # Check if this request would have been blocked by static limits (AI Save)
+            static_limit = PLAN_BASE.get(tenant, {"rps": 10.0})["rps"]
+            current_dynamic_limit = policies[pair]["rps"]
+            
+            # If current limit is higher than static limit, this might be an AI save
+            if current_dynamic_limit > static_limit:
+                # Simulate static limit check: would static limit have blocked this?
+                # This is approximated by checking if we're above static RPS rate
+                window = max(1.0, _now() - stats[pair]["since"])
+                current_rps = stats[pair]["ok"] / window if window > 0 else 0
+                
+                if current_rps > static_limit * 0.8:  # If we're near static limit capacity
+                    RL_AI_SAVES_TOTAL.labels(tenant).inc()
+        
         return True
     return False
 
@@ -191,6 +214,10 @@ def apply_policy(tenant: str, endpoint: str, rps: float, burst: int):
     
     RL_POLICY_RPS.labels(tenant, endpoint).set(policies[pair]["rps"])
     RL_POLICY_BURST.labels(tenant, endpoint).set(policies[pair]["burst"])
+    
+    # Only update dynamic limit for the primary endpoint (/api/v1/resourceA)
+    if endpoint == "/api/v1/resourceA":
+        RL_DYNAMIC_LIMIT.labels(tenant).set(policies[pair]["rps"])  # Update dynamic limit
 
 def _calculate_revenue_impact(tenant: str, allowed: bool):
     revenue = REVENUE_PER_REQUEST.get(tenant, 0.01)

@@ -92,39 +92,51 @@
             "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
             "targets": [
                 {
-                    "expr": "rl_dynamic_limit{tenant=\"free\"} or vector(8)",
-                    "legendFormat": "🆓 Free AI Limit",
+                    "expr": "max(rl_dynamic_limit{tenant=\"free\"}) or vector(8)",
+                    "legendFormat": "Free AI Limit",
                     "datasource": {"type": "prometheus", "uid": "prometheus"}
                 },
                 {
-                    "expr": "rl_dynamic_limit{tenant=\"pro\"} or vector(15)",
-                    "legendFormat": "💼 Pro AI Limit",
+                    "expr": "max(rl_dynamic_limit{tenant=\"pro\"}) or vector(15)",
+                    "legendFormat": "Pro AI Limit", 
                     "datasource": {"type": "prometheus", "uid": "prometheus"}
                 },
                 {
-                    "expr": "rl_dynamic_limit{tenant=\"ent\"} or vector(25)",
-                    "legendFormat": "🏆 Enterprise AI Limit",
+                    "expr": "max(rl_dynamic_limit{tenant=\"ent\"}) or vector(25)",
+                    "legendFormat": "Enterprise AI Limit",
                     "datasource": {"type": "prometheus", "uid": "prometheus"}
                 }
             ],
             "fieldConfig": {
                 "defaults": {
                     "unit": "reqps",
-                    "decimals": 1,
+                    "decimals": 0,
                     "custom": {"displayMode": "basic"}
                 },
                 "overrides": [
                     {
-                        "matcher": {"id": "byName", "options": "🆓 Free AI Limit"},
-                        "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "light-blue"}}]
+                        "matcher": {"id": "byName", "options": "Free AI Limit"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "light-blue"}},
+                            {"id": "custom.displayMode", "value": "lcd"},
+                            {"id": "displayName", "value": "🆓 Free"}
+                        ]
                     },
                     {
-                        "matcher": {"id": "byName", "options": "💼 Pro AI Limit"},
-                        "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "light-green"}}]
+                        "matcher": {"id": "byName", "options": "Pro AI Limit"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "light-green"}},
+                            {"id": "custom.displayMode", "value": "lcd"},
+                            {"id": "displayName", "value": "💼 Pro"}
+                        ]
                     },
                     {
-                        "matcher": {"id": "byName", "options": "🏆 Enterprise AI Limit"},
-                        "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "light-purple"}}]
+                        "matcher": {"id": "byName", "options": "Enterprise AI Limit"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "light-purple"}},
+                            {"id": "custom.displayMode", "value": "lcd"},
+                            {"id": "displayName", "value": "🏆 Enterprise"}
+                        ]
                     }
                 ]
             },
@@ -133,7 +145,12 @@
                 "graphMode": "none",
                 "justifyMode": "center",
                 "orientation": "vertical",
-                "textMode": "value_and_name"
+                "textMode": "value_and_name",
+                "reduceOptions": {
+                    "values": false,
+                    "calcs": ["lastNotNull"],
+                    "fields": ""
+                }
             }
         },
         {
@@ -245,24 +262,24 @@
         },
         {
             "id": 6,
-            "title": "🛡️ AI SAVES (429s Prevented)",
-            "description": "Requests blocked by AI to prevent 429 errors across all tiers",
+            "title": "🛡️ AI PROTECTION (Saves/Min)",
+            "description": "Requests saved by AI dynamic limits vs static limits",
             "type": "stat",
             "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
             "targets": [
                 {
-                    "expr": "sum(rate(rl_requests_total{tenant=\"free\", outcome=\"blocked\"}[1m])) * 60 or vector(0)",
-                    "legendFormat": "🆓 Free Saves",
+                    "expr": "max(rate(rl_ai_saves_total{tenant=\"free\"}[1m])) * 60 or vector(0)",
+                    "legendFormat": "Free Saves",
                     "datasource": {"type": "prometheus", "uid": "prometheus"}
                 },
                 {
-                    "expr": "sum(rate(rl_requests_total{tenant=\"pro\", outcome=\"blocked\"}[1m])) * 60 or vector(0)",
-                    "legendFormat": "💼 Pro Saves",
+                    "expr": "max(rate(rl_ai_saves_total{tenant=\"pro\"}[1m])) * 60 or vector(0)",
+                    "legendFormat": "Pro Saves",
                     "datasource": {"type": "prometheus", "uid": "prometheus"}
                 },
                 {
-                    "expr": "sum(rate(rl_requests_total{tenant=\"ent\", outcome=\"blocked\"}[1m])) * 60 or vector(0)",
-                    "legendFormat": "🏆 Enterprise Saves",
+                    "expr": "max(rate(rl_ai_saves_total{tenant=\"ent\"}[1m])) * 60 or vector(0)",
+                    "legendFormat": "Enterprise Saves",
                     "datasource": {"type": "prometheus", "uid": "prometheus"}
                 }
             ],
@@ -270,25 +287,28 @@
                 "defaults": {
                     "unit": "short",
                     "decimals": 0,
-                    "custom": {"displayMode": "basic"}
+                    "custom": {"displayMode": "lcd"}
                 },
                 "overrides": [
                     {
-                        "matcher": {"id": "byName", "options": "🆓 Free Saves"},
+                        "matcher": {"id": "byName", "options": "Free Saves"},
                         "properties": [
-                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#73BF69"}}
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#73BF69"}},
+                            {"id": "displayName", "value": "🆓 Free"}
                         ]
                     },
                     {
-                        "matcher": {"id": "byName", "options": "💼 Pro Saves"},
+                        "matcher": {"id": "byName", "options": "Pro Saves"},
                         "properties": [
-                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#56A64B"}}
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#56A64B"}},
+                            {"id": "displayName", "value": "💼 Pro"}
                         ]
                     },
                     {
-                        "matcher": {"id": "byName", "options": "🏆 Enterprise Saves"},
+                        "matcher": {"id": "byName", "options": "Enterprise Saves"},
                         "properties": [
-                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#37872D"}}
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#37872D"}},
+                            {"id": "displayName", "value": "🏆 Enterprise"}
                         ]
                     }
                 ]
@@ -298,24 +318,24 @@
                 "graphMode": "none",
                 "justifyMode": "center",
                 "orientation": "vertical",
-                "textMode": "value_and_name"
+                "textMode": "value_and_name",
+                "reduceOptions": {
+                    "values": false,
+                    "calcs": ["lastNotNull"],
+                    "fields": ""
+                }
             }
         },
         {
             "id": 5,
-            "title": "📈 TRAFFIC SURGE RISK",
-            "description": "AI predicts traffic surge probability",
-            "type": "piechart",
+            "title": "📈 TRAFFIC SURGE PREDICTION",
+            "description": "AI monitors traffic patterns and predicts surge probability over time",
+            "type": "timeseries",
             "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
             "targets": [
                 {
-                    "expr": "clamp_min(clamp_max(rl_surge_prediction or vector(0.25), 1.0), 0.0)",
-                    "legendFormat": "🚨 Surge Risk",
-                    "datasource": {"type": "prometheus", "uid": "prometheus"}
-                },
-                {
-                    "expr": "clamp_min(clamp_max(1 - (rl_surge_prediction or vector(0.25)), 1.0), 0.0)",
-                    "legendFormat": "✅ Stable",
+                    "expr": "clamp_min(clamp_max(rl_surge_prediction or vector(0.05), 1.0), 0.0)",
+                    "legendFormat": "🚨 Surge Risk Level",
                     "datasource": {"type": "prometheus", "uid": "prometheus"}
                 }
             ],
@@ -324,30 +344,38 @@
                     "unit": "percentunit",
                     "min": 0,
                     "max": 1,
-                    "decimals": 0
+                    "decimals": 2,
+                    "custom": {
+                        "drawStyle": "line",
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "fillOpacity": 20,
+                        "gradientMode": "hue",
+                        "spanNulls": false,
+                        "insertNulls": false,
+                        "showPoints": "auto",
+                        "pointSize": 5,
+                        "stacking": {"mode": "none", "group": "A"},
+                        "axisPlacement": "auto",
+                        "axisLabel": "",
+                        "axisColorMode": "text",
+                        "scaleDistribution": {"type": "linear"},
+                        "axisCenteredZero": false,
+                        "hideFrom": {"legend": false, "tooltip": false, "vis": false},
+                        "thresholdsStyle": {"mode": "off"}
+                    }
                 },
                 "overrides": [
                     {
-                        "matcher": {"id": "byName", "options": "🚨 Surge Risk"},
+                        "matcher": {"id": "byName", "options": "🚨 Surge Risk Level"},
                         "properties": [
-                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#F2495C"}}
-                        ]
-                    },
-                    {
-                        "matcher": {"id": "byName", "options": "✅ Stable"},
-                        "properties": [
-                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "#56A64B"}}
+                            {"id": "color", "value": {"mode": "palette-classic"}},
+                            {"id": "custom.fillOpacity", "value": 25}
                         ]
                     }
                 ]
             },
             "options": {
-                "reduceOptions": {
-                    "values": false,
-                    "calcs": ["lastNotNull"],
-                    "fields": ""
-                },
-                "pieType": "donut",
                 "tooltip": {
                     "mode": "single",
                     "sort": "none"
@@ -356,9 +384,8 @@
                     "displayMode": "table",
                     "placement": "bottom",
                     "showLegend": true,
-                    "values": ["percent"]
-                },
-                "displayLabels": ["name", "percent"]
+                    "values": ["current", "max"]
+                }
             }
         }
     ]
