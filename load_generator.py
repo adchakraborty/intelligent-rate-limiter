@@ -416,8 +416,11 @@ class HackathonLoadGenerator:
 
     async def health_check(self):
         """Simple health check for the rate limiter"""
+        # Create a temporary session for health check
+        temp_session = None
         try:
-            async with self.session.get(f"{self.base_url}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+            temp_session = aiohttp.ClientSession()
+            async with temp_session.get(f"{self.base_url}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
                 if resp.status == 200:
                     data = await resp.json()
                     print(f"{Colors.GREEN}✅ Rate Limiter: Healthy{Colors.END}")
@@ -429,6 +432,9 @@ class HackathonLoadGenerator:
         except Exception as e:
             print(f"{Colors.RED}❌ Rate Limiter: Not accessible ({e}){Colors.END}")
             return False
+        finally:
+            if temp_session:
+                await temp_session.close()
 
     async def run_scenario(self, scenario_name: str):
         """Run a single named scenario"""
@@ -469,7 +475,7 @@ class HackathonLoadGenerator:
             
             # Override scenario durations for perfect timing
             original_durations = {}
-            for scenario_name, _ in demo_sequence:
+            for scenario_name, _, *_ in demo_sequence:  # Handle variable tuple lengths
                 original_durations[scenario_name] = SCENARIOS[scenario_name].duration
                 SCENARIOS[scenario_name].duration = phase_duration
             
@@ -480,7 +486,7 @@ class HackathonLoadGenerator:
             await self.update_demo_phase(0, "Demo Inactive")  # Reset phase indicator
             await asyncio.sleep(3)
             
-            for i, (scenario_name, description) in enumerate(demo_sequence, 1):
+            for i, (scenario_name, description, *guidance) in enumerate(demo_sequence, 1):
                 if not self.running:
                     break
                 
@@ -493,8 +499,8 @@ class HackathonLoadGenerator:
                 print(f"{Colors.PURPLE}📊 Dashboard Phase {i}/3 - Check Grafana now!{Colors.END}")
                 
                 # Show specific dashboard panel guidance
-                if len(demo_sequence[i-1]) > 2:
-                    panel_guidance = demo_sequence[i-1][2]
+                if len(guidance) > 0:
+                    panel_guidance = guidance[0]
                     print(f"{Colors.WHITE}   👀 {panel_guidance}{Colors.END}")
                     
                 if i == 1:

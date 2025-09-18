@@ -16,6 +16,23 @@
     "schemaVersion": 30,
     "version": 1,
     "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "hideControls": false,
+    "links": [],
+    "liveNow": false,
+    "templating": {
+        "list": []
+    },
+    "timepicker": {},
+    "weekStart": "",
+    "annotations": {
+        "list": []
+    },
+    "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+    },
     "panels": [
         {
             "id": 1,
@@ -31,27 +48,51 @@
             "targets": [
                 {
                     "expr": "rl_real_time_rps{tenant=\"free\"}",
-                    "legendFormat": "📈 Free Traffic"
+                    "legendFormat": "📈 Free Traffic",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "rl_policy_rps{tenant=\"free\"}",
-                    "legendFormat": "🤖 AI Limit"
+                    "legendFormat": "🤖 AI Limit",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "5",
-                    "legendFormat": "🔒 Static 5"
+                    "legendFormat": "🔒 Static 5",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "increase(rl_blocked_requests_total{tenant=\"free\"}[30s])/30",
-                    "legendFormat": "❌ AI 429/s"
+                    "legendFormat": "❌ AI 429/s",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "clamp_min(rl_real_time_rps{tenant=\"free\"} - 5, 0)",
-                    "legendFormat": "💥 Static 429/s (would)"
+                    "legendFormat": "💥 Static 429/s (would)",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "clamp_min(clamp_min(rl_real_time_rps{tenant=\"free\"} - 5,0) - increase(rl_blocked_requests_total{tenant=\"free\"}[30s])/30, 0)",
-                    "legendFormat": "🟢 Avoided 429/s"
+                    "legendFormat": "🟢 Avoided 429/s",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 }
             ],
             "fieldConfig": {
@@ -240,27 +281,51 @@
             "targets": [
                 {
                     "expr": "rl_real_time_rps{tenant=\"pro\"}",
-                    "legendFormat": "📊 Pro Traffic"
+                    "legendFormat": "📊 Pro Traffic",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "rl_policy_rps{tenant=\"pro\"}",
-                    "legendFormat": "🤖 AI Limit"
+                    "legendFormat": "🤖 AI Limit",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "10",
-                    "legendFormat": "🔒 Static 10"
+                    "legendFormat": "🔒 Static 10",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "increase(rl_blocked_requests_total{tenant=\"pro\"}[30s])/30",
-                    "legendFormat": "❌ AI 429/s"
+                    "legendFormat": "❌ AI 429/s",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10, 0)",
-                    "legendFormat": "💥 Static 429/s (would)"
+                    "legendFormat": "💥 Static 429/s (would)",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "clamp_min(clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10,0) - increase(rl_blocked_requests_total{tenant=\"pro\"}[30s])/30, 0)",
-                    "legendFormat": "🟢 Avoided 429/s"
+                    "legendFormat": "🟢 Avoided 429/s",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 }
             ],
             "fieldConfig": {
@@ -449,27 +514,51 @@
             "targets": [
                 {
                     "expr": "rl_real_time_rps{tenant=\"ent\"}",
-                    "legendFormat": "🚀 Ent Traffic"
+                    "legendFormat": "🚀 Ent Traffic",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "rl_policy_rps{tenant=\"ent\"}",
-                    "legendFormat": "🤖 AI Limit"
+                    "legendFormat": "🤖 AI Limit",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "15",
-                    "legendFormat": "🔒 Static 15"
+                    "legendFormat": "🔒 Static 15",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "increase(rl_blocked_requests_total{tenant=\"ent\"}[30s])/30",
-                    "legendFormat": "❌ AI 429/s"
+                    "legendFormat": "❌ AI 429/s",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15, 0)",
-                    "legendFormat": "💥 Static 429/s (would)"
+                    "legendFormat": "💥 Static 429/s (would)",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "clamp_min(clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15,0) - increase(rl_blocked_requests_total{tenant=\"ent\"}[30s])/30, 0)",
-                    "legendFormat": "🟢 Avoided 429/s"
+                    "legendFormat": "🟢 Avoided 429/s",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 }
             ],
             "fieldConfig": {
@@ -644,7 +733,7 @@
                 }
             }
         },
-    {
+        {
             "id": 5,
             "title": "🧠 AI CONFIDENCE",
             "description": "AI confidence (target >85%).",
@@ -652,13 +741,17 @@
             "gridPos": {
                 "h": 8,
                 "w": 8,
-        "x": 0,
-        "y": 8
+                "x": 0,
+                "y": 8
             },
             "targets": [
                 {
                     "expr": "avg(rl_ai_confidence_score)",
-                    "legendFormat": "Confidence"
+                    "legendFormat": "Confidence",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 }
             ],
             "fieldConfig": {
@@ -689,7 +782,7 @@
                 "showThresholdMarkers": true
             }
         },
-    {
+        {
             "id": 6,
             "title": "🌊 SURGE RISK & PREEMPTIVE SCALING",
             "description": "Surge probability next window. 50% pre-warm, 70% scale-up, 90% critical.",
@@ -697,37 +790,65 @@
             "gridPos": {
                 "h": 8,
                 "w": 8,
-        "x": 8,
-        "y": 8
+                "x": 8,
+                "y": 8
             },
             "targets": [
                 {
                     "expr": "rl_surge_prediction{tenant=\"free\"}",
-                    "legendFormat": "🆓 Free Risk"
+                    "legendFormat": "🆓 Free Risk",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "rl_surge_prediction{tenant=\"pro\"}",
-                    "legendFormat": "💼 Pro Risk"
+                    "legendFormat": "💼 Pro Risk",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "rl_surge_prediction{tenant=\"ent\"}",
-                    "legendFormat": "🏆 Ent Risk"
+                    "legendFormat": "🏆 Ent Risk",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "max(rl_surge_prediction)",
-                    "legendFormat": "🔥 Peak Risk"
+                    "legendFormat": "🔥 Peak Risk",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "0.5",
-                    "legendFormat": "⚠️ 50% Pre-warm"
+                    "legendFormat": "⚠️ 50% Pre-warm",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "0.7",
-                    "legendFormat": "🛡️ 70% Scale-up"
+                    "legendFormat": "🛡️ 70% Scale-up",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "0.9",
-                    "legendFormat": "🚨 90% Critical"
+                    "legendFormat": "🚨 90% Critical",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 }
             ],
             "fieldConfig": {
@@ -931,7 +1052,7 @@
                 }
             }
         },
-    {
+        {
             "id": 7,
             "title": "🟢 AVOIDED 429s (Per Second)",
             "description": "Current rate of static 429s being avoided by AI adaptive scaling.",
@@ -939,25 +1060,41 @@
             "gridPos": {
                 "h": 8,
                 "w": 8,
-        "x": 16,
-        "y": 8
+                "x": 16,
+                "y": 8
             },
             "targets": [
                 {
                     "expr": "sum(clamp_min(rl_real_time_rps - vector(5), 0) * on(tenant) group_left() (rl_real_time_rps{tenant=\"free\"} * 0 + 1)) + sum(clamp_min(rl_real_time_rps - vector(10), 0) * on(tenant) group_left() (rl_real_time_rps{tenant=\"pro\"} * 0 + 1)) + sum(clamp_min(rl_real_time_rps - vector(15), 0) * on(tenant) group_left() (rl_real_time_rps{tenant=\"ent\"} * 0 + 1))",
-                    "legendFormat": "TOTAL Avoided/sec"
+                    "legendFormat": "TOTAL Avoided/sec",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "clamp_min(rl_real_time_rps{tenant=\"free\"} - 5, 0)",
-                    "legendFormat": "Free Avoided/sec"
+                    "legendFormat": "Free Avoided/sec",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10, 0)",
-                    "legendFormat": "Pro Avoided/sec"
+                    "legendFormat": "Pro Avoided/sec",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 },
                 {
                     "expr": "clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15, 0)",
-                    "legendFormat": "Ent Avoided/sec"
+                    "legendFormat": "Ent Avoided/sec",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 }
             ],
             "fieldConfig": {
@@ -1014,7 +1151,11 @@
             "targets": [
                 {
                     "expr": "rl_demo_phase",
-                    "legendFormat": "Current ACT"
+                    "legendFormat": "Current ACT",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
                 }
             ],
             "fieldConfig": {

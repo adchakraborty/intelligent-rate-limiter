@@ -11,7 +11,7 @@ datasources:
       httpMethod: POST
       queryTimeout: 60s
       timeInterval: 15s
-    uid: prometheus-uid
+    uid: prometheus
 
   - name: Loki
     type: loki
