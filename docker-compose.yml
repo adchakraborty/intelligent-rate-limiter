@@ -35,7 +35,8 @@ services:
       - PORT=8080
       - DECISION_MIN_CONF=0.6
       - HEURISTIC_EVERY_SEC=3.0
-      - LARGE_CHANGE_FACTOR=1.8
+      - LARGE_CHANGE_FACTOR=1.5
+      - DEMO_APPROVAL_DELAY=3.0
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
       - OLLAMA_MODEL=llama3.2:3b
       - OLLAMA_TIMEOUT_SEC=20.0

@@ -25,20 +25,21 @@ class LoadPattern:
     description: str
     surge_factor: float = 1.0
 
-# 🎪 Hackathon demo scenarios - DASHBOARD-SYNCHRONIZED TRAFFIC FOR VISUAL IMPACT
+# 🎪 Simple Dashboard Demo scenarios - optimized for 6-panel view
 SCENARIOS = {
-    "startup": LoadPattern("🌅 ACT I: AI Learning Phase", 30, 8, 6, 3, "Watch Panels 1-3: AI sets intelligent baselines"),
-    "business": LoadPattern("📈 Business Hours", 25, 25, 15, 8, "Normal operations - continuous AI decisions"),
-    "launch": LoadPattern("🚀 ACT II: Launch Surge", 35, 35, 22, 12, "Watch Panels 4-5: AI auto-scaling + governance kicks in", 1.5),
-    "blackfriday": LoadPattern("🛒 ACT III: Peak Crisis", 30, 60, 40, 25, "Watch Panel 6-7: Enterprise protection + massive avoided 429s", 2.2),
+    "startup": LoadPattern("🌅 ACT I: AI Learning Phase", 25, 35, 25, 15, "Watch AI Dynamic Limits learn and adapt"),
+    "business": LoadPattern("📈 Business Hours", 20, 25, 15, 8, "Normal operations - steady AI decisions"),
+    "launch": LoadPattern("🚀 ACT II: Launch Surge", 30, 150, 120, 80, "Watch Surge Probability rise + AI scaling", 3.0),
+    "blackfriday": LoadPattern("🛒 ACT III: Peak Crisis", 25, 200, 150, 100, "Watch Governance Queue + OLLAMA API calls", 4.0),
     "ddos": LoadPattern("⚡ DDoS Attack", 20, 100, 80, 50, "Simulated attack", 2.0),
     "viral": LoadPattern("🔥 Viral Content", 25, 70, 45, 30, "Content going viral", 1.5),
     "maintenance": LoadPattern("🌙 Low Traffic", 10, 3, 2, 1, "Maintenance window"),
     "enterprise": LoadPattern("🏆 Enterprise Priority", 30, 50, 20, 10, "Enterprise gets priority scaling", 2.0),
     
-    # 🏆 HACKATHON SPECIAL: Perfect dashboard sync timing
-    "demo-fast": LoadPattern("⚡ Fast Demo", 45, 35, 20, 12, "Quick 45s demo - all features visible", 1.8),
-    "demo-crisis": LoadPattern("🚨 Crisis Demo", 60, 80, 50, 30, "1-minute crisis simulation", 3.0),
+    # 🏆 SIMPLE DASHBOARD OPTIMIZED: Perfect for 6-panel view
+    "demo-simple": LoadPattern("⚡ Simple Demo", 60, 70, 50, 30, "2-minute demo - all 6 panels active", 2.5),
+    "demo-crisis": LoadPattern("🚨 Crisis Demo", 45, 80, 50, 30, "Crisis simulation - governance focus", 3.0),
+    "governance-test": LoadPattern("⚖️ Governance Queue Test", 30, 150, 120, 80, "High traffic to trigger governance", 4.0),
 }
 
 class Colors:
@@ -72,8 +73,8 @@ class HackathonLoadGenerator:
         
         # Auto-approval settings for governance demo
         self.auto_approve_enabled = True
-        self.approval_interval = 0.5  # Check every 0.5 seconds for responsive demo
-        self.approval_delay = 0.5     # Wait 0.5 seconds before auto-approving
+        self.approval_interval = 1.0  # Check every 1 second to see queue buildup
+        self.approval_delay = 2.0     # Wait 2 seconds before auto-approving for visibility
         self.last_approval_check = 0
         
         # Handle Ctrl+C gracefully
@@ -222,18 +223,30 @@ class HackathonLoadGenerator:
                             decision_age = current_time - decision.get("created", current_time)
                             scaling_factor = decision.get("scaling_factor", 1.0)
                             
-                            # Only approve if it's been pending for the delay AND it's a large change (>1.5x for demo)
-                            if decision_age >= self.approval_delay and scaling_factor >= 1.5:
+                            # Only approve SOME decisions and only after delay to show queue buildup
+                            if decision_age >= self.approval_delay:
+                                scaling_factor = decision.get("scaling_factor", 1.0)
                                 tenant = decision.get("tenant", "unknown")
-                                reason = "🏆 ENT-AUTO" if tenant == "ent" else "AUTO-APPROVE"
                                 
-                                await self.approve_decision(decision["id"], reason)
+                                # Only auto-approve 50% of enterprise decisions immediately, others wait longer
+                                should_approve = False
+                                if tenant == "ent" and random.random() < 0.5:
+                                    should_approve = True
+                                elif tenant in ["pro", "free"] and decision_age >= self.approval_delay * 1.5:
+                                    should_approve = True
                                 
-                                if tenant == "ent":
-                                    self.stats["enterprise_prioritized"] += 1
+                                if should_approve:
+                                    reason = "🏆 ENT-AUTO" if tenant == "ent" else "AUTO-APPROVE"
+                                    await self.approve_decision(decision["id"], reason)
                                     
-                                if self.verbose:
-                                    print(f"{Colors.CYAN}⏰ Auto-approved {scaling_factor:.1f}x scaling for {tenant} after {decision_age:.1f}s delay{Colors.END}")
+                                    if tenant == "ent":
+                                        self.stats["enterprise_prioritized"] += 1
+                                        
+                                    if self.verbose:
+                                        print(f"{Colors.CYAN}⏰ Auto-approved {scaling_factor:.1f}x scaling for {tenant} after {decision_age:.1f}s delay{Colors.END}")
+                                else:
+                                    if self.verbose and decision_age >= self.approval_delay:
+                                        print(f"{Colors.YELLOW}⏳ Governance queue: {tenant} decision pending {decision_age:.1f}s (scaling {scaling_factor:.1f}x){Colors.END}")
                             
         except Exception as e:
             if self.verbose:
@@ -303,7 +316,7 @@ class HackathonLoadGenerator:
                                 health_data = await health_resp.json()
                                 pending = health_data.get("pending_decisions", 0)
                                 policies = health_data.get("policies_active", 0)
-                                print(f"{Colors.BLUE}🎯 AI Status: {policies} policies active, {pending} pending | Check Panel 3 & 5 on dashboard{Colors.END}")
+                                print(f"{Colors.BLUE}🎯 AI Status: {policies} policies active, {pending} pending | Check AI LIMITS & GOVERNANCE QUEUE panels{Colors.END}")
                     except:
                         pass  # Ignore health check failures during load test
                     last_status_check = current_time
@@ -451,10 +464,10 @@ class HackathonLoadGenerator:
     
     async def run_hackathon_demo(self, duration_mins=2.5):
         """🏆 Run the complete hackathon demonstration sequence - optimized for 2-2.5 minutes"""
-        print(f"{Colors.BOLD}{Colors.PURPLE}🏆 HACKATHON AI RATE LIMITER DEMO{Colors.END}")
-        print(f"{Colors.PURPLE}{'=' * 60}{Colors.END}")
-        print(f"{Colors.WHITE}🎯 Showcasing AI vs Static Rate Limiting{Colors.END}")
-        print(f"{Colors.WHITE}🚀 Real traffic → AI decisions → Revenue protection{Colors.END}")
+        print(f"{Colors.BOLD}{Colors.PURPLE}🏆 SIMPLE AI RATE LIMITER DEMO{Colors.END}")
+        print(f"{Colors.PURPLE}{'=' * 50}{Colors.END}")
+        print(f"{Colors.WHITE}🎯 6-Panel Dashboard: Traffic → AI Limits → Decisions{Colors.END}")
+        print(f"{Colors.WHITE}🚀 Real metrics → Clean visualization → Judge impact{Colors.END}")
         print(f"{Colors.CYAN}⏱️  Duration: {duration_mins} minutes {Colors.END}")
         print(f"{Colors.YELLOW}📊 Dashboard sync: 1s refresh rate for smooth visualization{Colors.END}\n")
         
@@ -466,11 +479,11 @@ class HackathonLoadGenerator:
         transition_pause = 3  # Longer pause for dashboard to catch up
         
         try:
-            # 🎬 DASHBOARD-SYNCHRONIZED 3-Act Demo Structure for Visual Impact
+            # 🎬 SIMPLE DASHBOARD 3-Act Demo Structure for 6-panel visualization
             demo_sequence = [
-                ("startup", f"🌅 ACT I: AI Baseline Learning ({phase_duration}s)", "Watch FREE/PRO/ENT panels (1-3): AI sets smart baselines"), 
-                ("launch", f"🚀 ACT II: Launch Surge Detection ({phase_duration}s)", "Watch CONFIDENCE panel (4): AI predicts & scales proactively"),
-                ("blackfriday", f"🛒 ACT III: Peak Crisis Protection ({phase_duration}s)", "Watch AVOIDED 429s panel (7): Enterprise protection in action!")
+                ("startup", f"🌅 ACT I: AI Learning ({phase_duration}s)", "Watch CURRENT TRAFFIC vs AI DYNAMIC LIMITS panels"), 
+                ("launch", f"🚀 ACT II: Launch Surge ({phase_duration}s)", "Watch SURGE PROBABILITY rise + GOVERNANCE QUEUE activity"),
+                ("blackfriday", f"🛒 ACT III: Crisis Management ({phase_duration}s)", "Watch OLLAMA API CALLS spike + AI vs Static comparison!")
             ]
             
             # Override scenario durations for perfect timing
@@ -534,12 +547,13 @@ class HackathonLoadGenerator:
                 await self.update_demo_phase(0, "Demo Complete")  # Reset phase indicator
                 print(f"\n{Colors.BOLD}{Colors.GREEN}🏁 HACKATHON DEMO COMPLETE! ({total_elapsed:.1f}s total){Colors.END}")
                 print(f"{Colors.GREEN}🎯  check Grafana for visual proof!{Colors.END}")
-                print(f"{Colors.GREEN}📊 Dashboard: http://localhost:3000 (AI vs Static comparison){Colors.END}")
-                print(f"{Colors.PURPLE}🏆 Key Demo Points Covered:{Colors.END}")
-                print(f"{Colors.WHITE}   ✅ AI learns and adapts to real traffic patterns{Colors.END}")
-                print(f"{Colors.WHITE}   ✅ Automatic scaling prevents revenue loss{Colors.END}")
-                print(f"{Colors.WHITE}   ✅ Enterprise governance for business-critical decisions{Colors.END}")
-                print(f"{Colors.WHITE}   ✅ 93%+ success rate even under extreme load{Colors.END}")
+                print(f"{Colors.GREEN}📊 Simple Dashboard: http://localhost:3000 (6-panel view){Colors.END}")
+                print(f"{Colors.PURPLE}🏆 Simple Demo Points Covered:{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ Live traffic comparison (Free/Pro/Enterprise){Colors.END}")
+                print(f"{Colors.WHITE}   ✅ AI dynamic limits vs static limits{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ Governance queue management{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ Surge prediction and OLLAMA AI calls{Colors.END}")
+                print(f"{Colors.WHITE}   ✅ Real-time AI decision making visible{Colors.END}")
             
         except KeyboardInterrupt:
             print(f"\n{Colors.YELLOW}🛑 Demo interrupted by user{Colors.END}")
@@ -626,9 +640,9 @@ async def main():
     parser = argparse.ArgumentParser(description="🏆 Hackathon AI Rate Limiter Load Generator")
     parser.add_argument("--url", default="http://localhost:8080", help="Rate limiter URL")
     parser.add_argument("--scenario", choices=list(SCENARIOS.keys()), help="Run specific scenario")
-    parser.add_argument("--demo", action="store_true", help="Run full hackathon demo (2.5 mins)")
-    parser.add_argument("--demo-short", action="store_true", help="Run short demo (2.0 mins)")
-    parser.add_argument("--demo-quick", action="store_true", help="Run quick demo (1.5 mins)")
+    parser.add_argument("--demo", action="store_true", help="Run simple dashboard demo (2.5 mins)")
+    parser.add_argument("--demo-short", action="store_true", help="Run short simple demo (2.0 mins)")
+    parser.add_argument("--demo-quick", action="store_true", help="Run quick simple demo (1.5 mins)")
     parser.add_argument("--list", action="store_true", help="List available scenarios")
     parser.add_argument("--check", action="store_true", help="Health check only")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")

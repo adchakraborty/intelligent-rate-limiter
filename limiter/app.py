@@ -27,7 +27,7 @@ PORT = int(os.getenv("PORT", "8080"))
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://backend:8000")
 DECISION_MIN_CONF = float(os.getenv("DECISION_MIN_CONF", "0.6"))
 HEURISTIC_EVERY_SEC = float(os.getenv("HEURISTIC_EVERY_SEC", "1.5"))  # DEMO: Faster analysis for more AI calls
-LARGE_CHANGE_FACTOR = float(os.getenv("LARGE_CHANGE_FACTOR", "2.0"))  # DEMO: Changes > 2x go to governance for proper demo balance
+LARGE_CHANGE_FACTOR = float(os.getenv("LARGE_CHANGE_FACTOR", "1.5"))  # DEMO: Changes > 1.5x go to governance for better demo visibility
 
 # Customer tiers and revenue
 REVENUE_PER_REQUEST = {
@@ -79,6 +79,7 @@ RL_CUSTOMER_SATISFACTION = Gauge("rl_customer_satisfaction", "Customer satisfact
 
 # GOVERNANCE METRICS  
 RL_GOVERNANCE_QUEUE_SIZE = Gauge("rl_governance_queue_size", "Governance queue size")
+RL_GOVERNANCE_AUTO_APPROVALS = Counter("rl_governance_auto_approvals_total", "Auto-approved governance decisions", ["tenant"])
 
 # ADVANCED ANALYTICS METRICS
 RL_ANOMALY_SCORE = Gauge("rl_anomaly_score", "Anomaly score", ["tenant", "endpoint"])
@@ -132,7 +133,7 @@ state_lock = threading.Lock()
 
 # Demo auto-approval settings
 DEMO_AUTO_APPROVAL = True
-DEMO_APPROVAL_DELAY = 0.5  # Auto-approve after 0.5 seconds for smooth demo flow
+DEMO_APPROVAL_DELAY = float(os.getenv("DEMO_APPROVAL_DELAY", "3.0"))  # Auto-approve after 3 seconds for governance queue visibility
 
 # surge tracking state
 surge_history: Dict[Tuple[str,str], List[Dict[str, float]]] = {}
@@ -312,6 +313,9 @@ def _auto_approval_loop():
                             decision["action"],
                             "true"  # applied=true
                         ).inc()
+                        
+                        # Track auto-approval
+                        RL_GOVERNANCE_AUTO_APPROVALS.labels(decision["tenant"]).inc()
                         
                         logger.info(f"✅ AUTO-APPROVED: {decision['tenant']}/{decision['endpoint']} - {decision['new_rps']:.1f} RPS (after {DEMO_APPROVAL_DELAY}s)")
                         _track_log_entry("INFO", "policy_applied", decision["tenant"])
