@@ -108,6 +108,14 @@ RL_ADAPTIVE_THRESHOLD = Gauge("rl_adaptive_threshold", "AI-computed adaptive thr
 RL_PREDICTION_ACCURACY = Gauge("rl_prediction_accuracy", "AI prediction accuracy over time", ["tenant", "prediction_type"])
 RL_COST_OPTIMIZATION = Counter("rl_cost_optimization_total", "Cost optimization savings", ["tenant", "optimization_type"])
 RL_ALERT_SEVERITY = Gauge("rl_alert_severity", "Current alert severity levels", ["tenant", "alert_type"])
+
+# DEMO PHASE TRACKING - For ACT indicator in Grafana
+RL_DEMO_PHASE = Gauge("rl_demo_phase", "Current demo phase (1=ACT I, 2=ACT II, 3=ACT III, 0=inactive)")
+RL_DEMO_PHASE_NAME = Gauge("rl_demo_phase_name", "Current demo phase name", ["phase_name"])
+
+# Demo phase state tracking
+current_demo_phase = 0
+demo_start_time = None
 RL_PERFORMANCE_SCORE = Gauge("rl_performance_score", "Overall performance score", ["tenant", "metric"])
 RL_AI_VS_STATIC_COMPARISON = Gauge("rl_ai_vs_static", "AI vs Static rate limiting comparison", ["tenant", "metric", "limiter_type"])
 
@@ -1188,6 +1196,53 @@ def list_pending():
     with state_lock:
         pending_list = list(pending_decisions.values())
     return jsonify({"pending": pending_list, "count": len(pending_list)})
+
+@app.post("/demo/phase")
+def update_demo_phase():
+    """Update the current demo phase for ACT indicator in Grafana"""
+    global current_demo_phase, demo_start_time
+    
+    data = request.get_json()
+    if not data or 'phase' not in data:
+        return jsonify({"error": "Missing 'phase' in request body"}), 400
+    
+    phase = data['phase']
+    phase_name = data.get('phase_name', '')
+    
+    if phase not in [0, 1, 2, 3]:
+        return jsonify({"error": "Phase must be 0 (inactive), 1 (ACT I), 2 (ACT II), or 3 (ACT III)"}), 400
+    
+    current_demo_phase = phase
+    if phase > 0 and demo_start_time is None:
+        demo_start_time = time.time()
+    elif phase == 0:
+        demo_start_time = None
+    
+    # Update Prometheus metrics
+    RL_DEMO_PHASE.set(phase)
+    if phase_name:
+        # Clear previous phase name metrics
+        RL_DEMO_PHASE_NAME.clear()
+        RL_DEMO_PHASE_NAME.labels(phase_name=phase_name).set(1)
+    
+    logger.info(f"Demo phase updated: {phase} ({phase_name})")
+    
+    return jsonify({
+        "phase": phase,
+        "phase_name": phase_name,
+        "demo_start_time": demo_start_time,
+        "timestamp": time.time()
+    })
+
+@app.get("/demo/phase")
+def get_demo_phase():
+    """Get the current demo phase"""
+    return jsonify({
+        "phase": current_demo_phase,
+        "demo_start_time": demo_start_time,
+        "elapsed_seconds": (time.time() - demo_start_time) if demo_start_time else 0,
+        "timestamp": time.time()
+    })
 
 @app.post("/ai/approve/<decision_id>")
 def approve_decision(decision_id: str):

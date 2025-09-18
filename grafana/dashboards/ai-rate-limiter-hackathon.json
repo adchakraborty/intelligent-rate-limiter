@@ -1,16 +1,16 @@
 {
     "id": null,
-    "title": "🏆 AI Rate Limiter - Tier-by-Tier Demo",
+    "title": "🏆 FluxGuard AI Demo - Live AI vs Static Rate Limiting",
     "tags": [
         "ai",
         "rate-limiting",
         "hackathon",
-        "tier-demo"
+        "fluxguard-demo"
     ],
     "timezone": "browser",
     "refresh": "1s",
     "time": {
-        "from": "now-3m",
+        "from": "now-2.5m",
         "to": "now"
     },
     "schemaVersion": 30,
@@ -19,8 +19,8 @@
     "panels": [
         {
             "id": 1,
-            "title": "🆓 FREE TIER: AI vs Static",
-            "description": "AI scales 5→25+ RPS; static stuck at 5. Red = avoided static 429s.",
+            "title": "🆓 ACT I: FREE TIER (AI Learning)",
+            "description": "Phase 1: Watch AI learn patterns! AI scales 5→15+ RPS vs static 5. Green = avoided 429s.",
             "type": "timeseries",
             "gridPos": {
                 "h": 8,
@@ -228,8 +228,8 @@
         },
         {
             "id": 2,
-            "title": "💼 PRO TIER: AI vs Static",
-            "description": "AI scales 10→60+ RPS; static stuck at 10.",
+            "title": "💼 ACT II: PRO TIER (Launch Surge)",
+            "description": "Phase 2: AI predicts & scales! Pro 12→40 RPS auto-scaling. Watch green avoided 429s!",
             "type": "timeseries",
             "gridPos": {
                 "h": 8,
@@ -437,8 +437,8 @@
         },
         {
             "id": 3,
-            "title": "🏆 ENT TIER: AI vs Static",
-            "description": "AI scales 15→120+ RPS under governance; static stuck at 15.",
+            "title": "🏆 ACT III: ENT TIER (Crisis Protection)",
+            "description": "Phase 3: Maximum protection! Enterprise 25→120 RPS. Massive avoided 429s!",
             "type": "timeseries",
             "gridPos": {
                 "h": 8,
@@ -998,6 +998,64 @@
                 "justifyMode": "center",
                 "orientation": "horizontal",
                 "textMode": "value_and_name"
+            }
+        },
+        {
+            "id": 8,
+            "title": "🎬 DEMO PHASE INDICATOR",
+            "description": "Shows which ACT is currently active in the demo",
+            "type": "stat",
+            "gridPos": {
+                "h": 4,
+                "w": 24,
+                "x": 0,
+                "y": 16
+            },
+            "targets": [
+                {
+                    "expr": "rl_demo_phase",
+                    "legendFormat": "Current ACT"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "max": 3,
+                    "unit": "none",
+                    "mappings": [
+                        {
+                            "options": {
+                                "0": {
+                                    "text": "🔄 DEMO INACTIVE",
+                                    "color": "gray"
+                                },
+                                "1": {
+                                    "text": "🌅 ACT I: AI LEARNING",
+                                    "color": "blue"
+                                },
+                                "2": {
+                                    "text": "🚀 ACT II: LAUNCH SURGE",
+                                    "color": "orange"
+                                },
+                                "3": {
+                                    "text": "🛒 ACT III: PEAK CRISIS",
+                                    "color": "red"
+                                }
+                            },
+                            "type": "value"
+                        }
+                    ],
+                    "custom": {
+                        "textMode": "name"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "textMode": "name"
             }
     }
     ]

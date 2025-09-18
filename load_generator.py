@@ -25,18 +25,18 @@ class LoadPattern:
     description: str
     surge_factor: float = 1.0
 
-# 🎪 Hackathon demo scenarios - REALISTIC SUSTAINED TRAFFIC FOR AI VISIBILITY
+# 🎪 Hackathon demo scenarios - DASHBOARD-SYNCHRONIZED TRAFFIC FOR VISUAL IMPACT
 SCENARIOS = {
-    "startup": LoadPattern("🌅 Morning Startup", 20, 12, 8, 4, "Light sustained traffic - triggers AI"),
+    "startup": LoadPattern("🌅 ACT I: AI Learning Phase", 30, 8, 6, 3, "Watch Panels 1-3: AI sets intelligent baselines"),
     "business": LoadPattern("📈 Business Hours", 25, 25, 15, 8, "Normal operations - continuous AI decisions"),
-    "launch": LoadPattern("🚀 Product Launch", 30, 40, 25, 15, "Product surge - triggers governance queue"),
-    "blackfriday": LoadPattern("🛒 Black Friday", 25, 55, 35, 20, "Peak shopping - heavy governance activity"),
+    "launch": LoadPattern("🚀 ACT II: Launch Surge", 35, 35, 22, 12, "Watch Panels 4-5: AI auto-scaling + governance kicks in", 1.5),
+    "blackfriday": LoadPattern("🛒 ACT III: Peak Crisis", 30, 60, 40, 25, "Watch Panel 6-7: Enterprise protection + massive avoided 429s", 2.2),
     "ddos": LoadPattern("⚡ DDoS Attack", 20, 100, 80, 50, "Simulated attack", 2.0),
     "viral": LoadPattern("🔥 Viral Content", 25, 70, 45, 30, "Content going viral", 1.5),
     "maintenance": LoadPattern("🌙 Low Traffic", 10, 3, 2, 1, "Maintenance window"),
     "enterprise": LoadPattern("🏆 Enterprise Priority", 30, 50, 20, 10, "Enterprise gets priority scaling", 2.0),
     
-    # 🏆 HACKATHON SPECIAL: Optimized  (2-2.5 min total)
+    # 🏆 HACKATHON SPECIAL: Perfect dashboard sync timing
     "demo-fast": LoadPattern("⚡ Fast Demo", 45, 35, 20, 12, "Quick 45s demo - all features visible", 1.8),
     "demo-crisis": LoadPattern("🚨 Crisis Demo", 60, 80, 50, 30, "1-minute crisis simulation", 3.0),
 }
@@ -100,6 +100,30 @@ class HackathonLoadGenerator:
             timeout=timeout,
             connector_owner=True
         )
+    
+    async def update_demo_phase(self, phase: int, phase_name: str = ""):
+        """Update the demo phase indicator in the rate limiter for Grafana dashboard"""
+        if not self.session:
+            return
+            
+        try:
+            phase_endpoint = f"{self.base_url}/demo/phase"
+            payload = {"phase": phase, "phase_name": phase_name}
+            
+            async with self.session.post(
+                phase_endpoint,
+                json=payload,
+                headers={"Content-Type": "application/json"}
+            ) as response:
+                if response.status == 200:
+                    if self.verbose:
+                        print(f"{Colors.GREEN}📊 Demo phase updated: {phase} ({phase_name}){Colors.END}")
+                else:
+                    if self.verbose:
+                        print(f"{Colors.YELLOW}⚠️  Phase update failed: {response.status}{Colors.END}")
+        except Exception as e:
+            if self.verbose:
+                print(f"{Colors.YELLOW}⚠️  Phase update error: {e}{Colors.END}")
     
     async def close_session(self):
         """Close HTTP session with proper cleanup for Windows"""
@@ -262,12 +286,13 @@ class HackathonLoadGenerator:
                     await self.check_and_approve_decisions()
                     self.last_approval_check = current_time
                 
-                # 📊 Dashboard-synced progress updates every 5 seconds
-                if current_time - last_progress_update > 5 and show_progress:
+                # 📊 Dashboard-synced progress updates every 6 seconds for better visibility
+                if current_time - last_progress_update > 6 and show_progress:
                     elapsed = current_time - start_time
                     remaining = pattern.duration - elapsed
                     progress_pct = (elapsed / pattern.duration) * 100
-                    print(f"{Colors.CYAN}📊 Phase progress: {progress_pct:.0f}% | {remaining:.0f}s remaining | Dashboard updating...{Colors.END}")
+                    current_rps = requests_sent / max(1, elapsed)
+                    print(f"{Colors.CYAN}📊 Phase: {progress_pct:.0f}% | {remaining:.0f}s left | {tenant.upper()}: {current_rps:.1f} RPS | 🎯 Check dashboard now!{Colors.END}")
                     last_progress_update = current_time
                 
                 # Enhanced system status check with dashboard correlation
@@ -353,6 +378,58 @@ class HackathonLoadGenerator:
    {Colors.WHITE}📈 Success Rate: {success_rate:.1f}%{Colors.END}
         """)
     
+    async def check_dashboard_sync(self):
+        """🎯 Validate dashboard synchronization for optimal demo experience"""
+        print(f"{Colors.BOLD}{Colors.CYAN}🎯 Validating Demo Setup...{Colors.END}")
+        
+        try:
+            # Check Grafana connectivity (assuming it's on port 3000)
+            try:
+                async with self.session.get("http://localhost:3000/api/health", timeout=aiohttp.ClientTimeout(total=3)) as resp:
+                    if resp.status == 200:
+                        print(f"{Colors.GREEN}✅ Grafana Dashboard: Ready at http://localhost:3000{Colors.END}")
+                    else:
+                        print(f"{Colors.YELLOW}⚠️  Grafana: Accessible but status {resp.status}{Colors.END}")
+            except:
+                print(f"{Colors.RED}❌ Grafana: Not accessible at http://localhost:3000{Colors.END}")
+                print(f"{Colors.YELLOW}   💡 Start with: docker-compose up -d grafana{Colors.END}")
+        except:
+            pass
+        
+        # Check AI rate limiter metrics endpoint
+        try:
+            async with self.session.get(f"{self.base_url}/metrics", timeout=aiohttp.ClientTimeout(total=2)) as resp:
+                if resp.status == 200:
+                    content = await resp.text()
+                    if "rl_real_time_rps" in content:
+                        print(f"{Colors.GREEN}✅ Prometheus Metrics: Available and populated{Colors.END}")
+                    else:
+                        print(f"{Colors.YELLOW}⚠️  Prometheus Metrics: Available but no traffic data yet{Colors.END}")
+                else:
+                    print(f"{Colors.RED}❌ Metrics endpoint: Status {resp.status}{Colors.END}")
+        except Exception as e:
+            print(f"{Colors.RED}❌ Metrics endpoint: Not accessible{Colors.END}")
+        
+        print(f"{Colors.CYAN}🎬 Dashboard Refresh: 1 second (perfect for demo){Colors.END}")
+        print(f"{Colors.CYAN}📊 Time Window: 2.5 minutes (matches demo duration){Colors.END}")
+        print(f"{Colors.BOLD}🏆 Ready for synchronized demo experience!{Colors.END}")
+
+    async def health_check(self):
+        """Simple health check for the rate limiter"""
+        try:
+            async with self.session.get(f"{self.base_url}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    print(f"{Colors.GREEN}✅ Rate Limiter: Healthy{Colors.END}")
+                    print(f"{Colors.CYAN}📊 Status: {data.get('status', 'unknown')}{Colors.END}")
+                    return True
+                else:
+                    print(f"{Colors.RED}❌ Rate Limiter: Status {resp.status}{Colors.END}")
+                    return False
+        except Exception as e:
+            print(f"{Colors.RED}❌ Rate Limiter: Not accessible ({e}){Colors.END}")
+            return False
+
     async def run_scenario(self, scenario_name: str):
         """Run a single named scenario"""
         if scenario_name not in SCENARIOS:
@@ -383,11 +460,11 @@ class HackathonLoadGenerator:
         transition_pause = 3  # Longer pause for dashboard to catch up
         
         try:
-            # 🎬 OPTIMIZED 3-Act Demo Structure for Maximum Impact
+            # 🎬 DASHBOARD-SYNCHRONIZED 3-Act Demo Structure for Visual Impact
             demo_sequence = [
-                ("startup", f"🌅 ACT I: Baseline Traffic ({phase_duration}s) - Watch AI learn patterns"), 
-                ("launch", f"🚀 ACT II: Product Launch Surge ({phase_duration}s) - AI auto-scaling kicks in"),
-                ("blackfriday", f"🛒 ACT III: Peak Crisis ({phase_duration}s) - Enterprise governance + AI protection!")
+                ("startup", f"🌅 ACT I: AI Baseline Learning ({phase_duration}s)", "Watch FREE/PRO/ENT panels (1-3): AI sets smart baselines"), 
+                ("launch", f"🚀 ACT II: Launch Surge Detection ({phase_duration}s)", "Watch CONFIDENCE panel (4): AI predicts & scales proactively"),
+                ("blackfriday", f"🛒 ACT III: Peak Crisis Protection ({phase_duration}s)", "Watch AVOIDED 429s panel (7): Enterprise protection in action!")
             ]
             
             # Override scenario durations for perfect timing
@@ -398,24 +475,34 @@ class HackathonLoadGenerator:
             
             demo_start = time.time()
             
-            # 📊 Initial dashboard sync pause
+            # 📊 Initial dashboard sync pause & reset to inactive
             print(f"{Colors.CYAN}📊 Syncing with Grafana dashboard (3s)...{Colors.END}")
+            await self.update_demo_phase(0, "Demo Inactive")  # Reset phase indicator
             await asyncio.sleep(3)
             
             for i, (scenario_name, description) in enumerate(demo_sequence, 1):
                 if not self.running:
                     break
                 
+                # Update demo phase indicator for Grafana
+                phase_names = ["ACT I: AI Learning", "ACT II: Launch Surge", "ACT III: Peak Crisis"]
+                await self.update_demo_phase(i, phase_names[i-1])
+                
                 phase_start = time.time()
                 print(f"\n{Colors.BOLD}{Colors.BLUE}🎬 {description}{Colors.END}")
                 print(f"{Colors.PURPLE}📊 Dashboard Phase {i}/3 - Check Grafana now!{Colors.END}")
                 
+                # Show specific dashboard panel guidance
+                if len(demo_sequence[i-1]) > 2:
+                    panel_guidance = demo_sequence[i-1][2]
+                    print(f"{Colors.WHITE}   👀 {panel_guidance}{Colors.END}")
+                    
                 if i == 1:
-                    print(f"{Colors.WHITE}   👀 Watch Dashboard: Panel 1 (traffic), Panel 3 (AI confidence), Panel 7 (adaptive limits){Colors.END}")
+                    print(f"{Colors.CYAN}   📊 KEY PANELS: FREE/PRO/ENT tiers (1-3) + AI Confidence (4){Colors.END}")
                 elif i == 2:
-                    print(f"{Colors.WHITE}   👀 Watch Dashboard: Panel 4 (surge prediction), Panel 2 (revenue protection), Panel 7 (scaling){Colors.END}")
+                    print(f"{Colors.CYAN}   � KEY PANELS: Surge Risk (5) + AI auto-scaling in action{Colors.END}")
                 elif i == 3:
-                    print(f"{Colors.WHITE}   👀 Watch Dashboard: Panel 5 (governance), Panel 6 (satisfaction), Panel 2 (max protection){Colors.END}")
+                    print(f"{Colors.CYAN}   � KEY PANELS: Avoided 429s (7) showing massive revenue protection!{Colors.END}")
                 
                 # 🎯 Phase countdown for perfect sync
                 print(f"{Colors.CYAN}⏱️  Phase {i} running for {phase_duration}s...{Colors.END}")
@@ -438,6 +525,7 @@ class HackathonLoadGenerator:
             
             if self.running:
                 total_elapsed = time.time() - demo_start
+                await self.update_demo_phase(0, "Demo Complete")  # Reset phase indicator
                 print(f"\n{Colors.BOLD}{Colors.GREEN}🏁 HACKATHON DEMO COMPLETE! ({total_elapsed:.1f}s total){Colors.END}")
                 print(f"{Colors.GREEN}🎯  check Grafana for visual proof!{Colors.END}")
                 print(f"{Colors.GREEN}📊 Dashboard: http://localhost:3000 (AI vs Static comparison){Colors.END}")
@@ -454,7 +542,43 @@ class HackathonLoadGenerator:
             # Windows-specific: Give extra time for async cleanup
             await asyncio.sleep(0.2)
     
-    async def health_check(self):
+    async def check_dashboard_sync(self):
+        """🎯 Validate dashboard synchronization for optimal demo experience"""
+        print(f"{Colors.BOLD}{Colors.CYAN}🎯 Validating Demo Setup...{Colors.END}")
+        
+        try:
+            # Check Grafana connectivity (assuming it's on port 3000)
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                try:
+                    async with session.get("http://localhost:3000/api/health", timeout=aiohttp.ClientTimeout(total=3)) as resp:
+                        if resp.status == 200:
+                            print(f"{Colors.GREEN}✅ Grafana Dashboard: Ready at http://localhost:3000{Colors.END}")
+                        else:
+                            print(f"{Colors.YELLOW}⚠️  Grafana: Accessible but status {resp.status}{Colors.END}")
+                except:
+                    print(f"{Colors.RED}❌ Grafana: Not accessible at http://localhost:3000{Colors.END}")
+                    print(f"{Colors.YELLOW}   💡 Start with: docker-compose up -d grafana{Colors.END}")
+        except:
+            pass
+        
+        # Check AI rate limiter metrics endpoint
+        try:
+            async with self.session.get(f"{self.base_url}/metrics", timeout=aiohttp.ClientTimeout(total=2)) as resp:
+                if resp.status == 200:
+                    content = await resp.text()
+                    if "rl_real_time_rps" in content:
+                        print(f"{Colors.GREEN}✅ Prometheus Metrics: Available and populated{Colors.END}")
+                    else:
+                        print(f"{Colors.YELLOW}⚠️  Prometheus Metrics: Available but no traffic data yet{Colors.END}")
+                else:
+                    print(f"{Colors.RED}❌ Metrics endpoint: Status {resp.status}{Colors.END}")
+        except Exception as e:
+            print(f"{Colors.RED}❌ Metrics endpoint: Not accessible{Colors.END}")
+        
+        print(f"{Colors.CYAN}🎬 Dashboard Refresh: 1 second (perfect for demo){Colors.END}")
+        print(f"{Colors.CYAN}📊 Time Window: 2.5 minutes (matches demo duration){Colors.END}")
+        print(f"{Colors.BOLD}🏆 Ready for synchronized demo experience!{Colors.END}")
         """Check if the rate limiter is responding"""
         try:
             async with aiohttp.ClientSession() as session:
