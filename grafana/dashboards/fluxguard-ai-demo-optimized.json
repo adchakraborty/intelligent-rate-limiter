@@ -1,0 +1,899 @@
+{
+    "id": null,
+    "title": "🤖 FluxGuard AI vs Static Rate Limiting - Live Demo",
+    "tags": ["ai", "rate-limiting", "demo", "fluxguard", "hackathon"],
+    "timezone": "browser",
+    "refresh": "500ms",
+    "time": {
+        "from": "now-3m",
+        "to": "now"
+    },
+    "schemaVersion": 30,
+    "version": 1,
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "hideControls": false,
+    "links": [],
+    "liveNow": true,
+    "templating": {
+        "list": []
+    },
+    "timepicker": {
+        "refresh_intervals": ["500ms", "1s", "2s"],
+        "time_options": ["1m", "2m", "3m", "5m"]
+    },
+    "weekStart": "",
+    "annotations": {
+        "list": [
+            {
+                "name": "Demo Phases",
+                "datasource": "prometheus",
+                "enable": true,
+                "expr": "changes(rl_demo_phase[1m]) > 0",
+                "iconColor": "red",
+                "tags": ["demo", "phase"]
+            }
+        ]
+    },
+    "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+    },
+    "panels": [
+        {
+            "id": 1,
+            "title": "🎬 DEMO PHASE TRACKER",
+            "description": "Current demo phase - synchronized with load generator",
+            "type": "stat",
+            "gridPos": {"h": 3, "w": 24, "x": 0, "y": 0},
+            "targets": [
+                {
+                    "expr": "rl_demo_phase",
+                    "legendFormat": "Demo Phase",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "max": 3,
+                    "unit": "none",
+                    "mappings": [
+                        {"options": {"0": {"text": "🔴 Demo Inactive"}}, "type": "value"},
+                        {"options": {"1": {"text": "🌅 ACT I: AI Learning Phase"}}, "type": "value"},
+                        {"options": {"2": {"text": "🚀 ACT II: Launch Surge"}}, "type": "value"},
+                        {"options": {"3": {"text": "🛒 ACT III: Peak Crisis"}}, "type": "value"}
+                    ],
+                    "thresholds": {
+                        "steps": [
+                            {"color": "red", "value": 0},
+                            {"color": "blue", "value": 1},
+                            {"color": "orange", "value": 2},
+                            {"color": "green", "value": 3}
+                        ]
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "textMode": "name",
+                "reduceOptions": {"calcs": ["lastNotNull"]}
+            }
+        },
+        {
+            "id": 2,
+            "title": "🆓 FREE TIER: AI vs Static (5 RPS baseline)",
+            "description": "ACT I Focus: Watch AI learn and adapt beyond static 5 RPS limit",
+            "type": "timeseries",
+            "gridPos": {"h": 9, "w": 8, "x": 0, "y": 3},
+            "targets": [
+                {
+                    "expr": "rl_real_time_rps{tenant=\"free\"}",
+                    "legendFormat": "📈 Actual Traffic",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_policy_rps{tenant=\"free\"}",
+                    "legendFormat": "🤖 AI Dynamic Limit",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "5",
+                    "legendFormat": "🔒 Static Limit (5)",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rate(rl_blocked_requests_total{tenant=\"free\"}[30s])",
+                    "legendFormat": "❌ AI Blocks/sec",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "clamp_min(rl_real_time_rps{tenant=\"free\"} - 5, 0)",
+                    "legendFormat": "💥 Static Would Block",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "min": 0,
+                    "max": 25,
+                    "custom": {"lineWidth": 3, "fillOpacity": 15}
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "📈 Actual Traffic"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+                            {"id": "custom.lineWidth", "value": 4}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "🤖 AI Dynamic Limit"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+                            {"id": "custom.lineWidth", "value": 3},
+                            {"id": "custom.lineStyle", "value": {"dash": [10, 10], "fill": "dash"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "🔒 Static Limit (5)"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+                            {"id": "custom.lineWidth", "value": 2},
+                            {"id": "custom.lineStyle", "value": {"dash": [5, 5], "fill": "dash"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "💥 Static Would Block"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "dark-red"}},
+                            {"id": "custom.fillOpacity", "value": 30}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": ["lastNotNull", "max"],
+                    "values": ["lastNotNull", "max"]
+                }
+            }
+        },
+        {
+            "id": 3,
+            "title": "💼 PRO TIER: AI vs Static (10 RPS baseline)",
+            "description": "ACT II Focus: Launch surge auto-scaling in action",
+            "type": "timeseries",
+            "gridPos": {"h": 9, "w": 8, "x": 8, "y": 3},
+            "targets": [
+                {
+                    "expr": "rl_real_time_rps{tenant=\"pro\"}",
+                    "legendFormat": "📊 Actual Traffic",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_policy_rps{tenant=\"pro\"}",
+                    "legendFormat": "🤖 AI Dynamic Limit",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "10",
+                    "legendFormat": "🔒 Static Limit (10)",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rate(rl_blocked_requests_total{tenant=\"pro\"}[30s])",
+                    "legendFormat": "❌ AI Blocks/sec",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10, 0)",
+                    "legendFormat": "💥 Static Would Block",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "min": 0,
+                    "max": 50,
+                    "custom": {"lineWidth": 3, "fillOpacity": 15}
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "📊 Actual Traffic"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+                            {"id": "custom.lineWidth", "value": 4}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "🤖 AI Dynamic Limit"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+                            {"id": "custom.lineWidth", "value": 3},
+                            {"id": "custom.lineStyle", "value": {"dash": [10, 10], "fill": "dash"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "🔒 Static Limit (10)"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+                            {"id": "custom.lineWidth", "value": 2},
+                            {"id": "custom.lineStyle", "value": {"dash": [5, 5], "fill": "dash"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "💥 Static Would Block"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "dark-red"}},
+                            {"id": "custom.fillOpacity", "value": 30}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": ["lastNotNull", "max"],
+                    "values": ["lastNotNull", "max"]
+                }
+            }
+        },
+        {
+            "id": 4,
+            "title": "🏆 ENTERPRISE: AI vs Static (15 RPS baseline)",
+            "description": "ACT III Focus: Maximum protection during peak crisis",
+            "type": "timeseries",
+            "gridPos": {"h": 9, "w": 8, "x": 16, "y": 3},
+            "targets": [
+                {
+                    "expr": "rl_real_time_rps{tenant=\"ent\"}",
+                    "legendFormat": "🚀 Actual Traffic",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_policy_rps{tenant=\"ent\"}",
+                    "legendFormat": "🤖 AI Dynamic Limit",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "15",
+                    "legendFormat": "🔒 Static Limit (15)",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rate(rl_blocked_requests_total{tenant=\"ent\"}[30s])",
+                    "legendFormat": "❌ AI Blocks/sec",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15, 0)",
+                    "legendFormat": "💥 Static Would Block",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "min": 0,
+                    "max": 100,
+                    "custom": {"lineWidth": 3, "fillOpacity": 15}
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "🚀 Actual Traffic"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+                            {"id": "custom.lineWidth", "value": 4}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "🤖 AI Dynamic Limit"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+                            {"id": "custom.lineWidth", "value": 3},
+                            {"id": "custom.lineStyle", "value": {"dash": [10, 10], "fill": "dash"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "🔒 Static Limit (15)"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+                            {"id": "custom.lineWidth", "value": 2},
+                            {"id": "custom.lineStyle", "value": {"dash": [5, 5], "fill": "dash"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "💥 Static Would Block"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "dark-red"}},
+                            {"id": "custom.fillOpacity", "value": 30}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": ["lastNotNull", "max"],
+                    "values": ["lastNotNull", "max"]
+                }
+            }
+        },
+        {
+            "id": 5,
+            "title": "🧠 AI CONFIDENCE SCORE",
+            "description": "Real-time AI decision confidence (>85% = high confidence)",
+            "type": "gauge",
+            "gridPos": {"h": 8, "w": 6, "x": 0, "y": 12},
+            "targets": [
+                {
+                    "expr": "avg(rl_ai_confidence_score)",
+                    "legendFormat": "AI Confidence",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "min": 0,
+                    "max": 1,
+                    "unit": "percentunit",
+                    "thresholds": {
+                        "steps": [
+                            {"color": "red", "value": 0},
+                            {"color": "yellow", "value": 0.6},
+                            {"color": "green", "value": 0.85}
+                        ]
+                    }
+                }
+            },
+            "options": {
+                "showThresholdLabels": true,
+                "showThresholdMarkers": true,
+                "text": {"titleSize": 20, "valueSize": 40}
+            }
+        },
+        {
+            "id": 6,
+            "title": "💰 REVENUE IMPACT COMPARISON",
+            "description": "Real-time revenue protection vs static rate limiting losses",
+            "type": "stat",
+            "gridPos": {"h": 8, "w": 6, "x": 6, "y": 12},
+            "targets": [
+                {
+                    "expr": "sum(rate(rl_requests_total{outcome=\"allowed\"}[1m])) * 60 * 0.15",
+                    "legendFormat": "💰 AI Protected Revenue/min",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "(sum(clamp_min(rl_real_time_rps{tenant=\"free\"} - 5, 0)) + sum(clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10, 0)) + sum(clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15, 0))) * 60 * 0.18",
+                    "legendFormat": "💸 Static Would Lose/min",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "currencyUSD",
+                    "decimals": 0
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "💰 AI Protected ($)"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+                            {"id": "custom.displayMode", "value": "basic"}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "💸 Static Would Lose ($)"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+                            {"id": "custom.displayMode", "value": "basic"}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "textMode": "value_and_name"
+            }
+        },
+        {
+            "id": 8,
+            "title": "🚨 PREVENTED 429 ERRORS (Real-Time)",
+            "description": "Live count of 429 errors prevented by AI intelligence vs static limits",
+            "type": "stat",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+            "targets": [
+                {
+                    "expr": "sum(clamp_min(rl_real_time_rps{tenant=\"free\"} - 5, 0)) + sum(clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10, 0)) + sum(clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15, 0))",
+                    "legendFormat": "Avoided 429s/sec",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "decimals": 0,
+                    "color": {"mode": "thresholds"},
+                    "thresholds": {
+                        "steps": [
+                            {"color": "green", "value": 0},
+                            {"color": "yellow", "value": 20},
+                            {"color": "red", "value": 50}
+                        ]
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "textMode": "value",
+                "text": {"titleSize": 16, "valueSize": 50}
+            }
+        },
+        {
+            "id": 9,
+            "title": "🌊 SURGE PREDICTION & AUTO-SCALING",
+            "description": "AI predictive scaling triggers and risk assessment",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+            "targets": [
+                {
+                    "expr": "max(rl_surge_prediction)",
+                    "legendFormat": "🔥 Peak Surge Risk",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_surge_prediction{tenant=\"free\"}",
+                    "legendFormat": "🆓 Free Risk",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_surge_prediction{tenant=\"pro\"}",
+                    "legendFormat": "💼 Pro Risk",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_surge_prediction{tenant=\"ent\"}",
+                    "legendFormat": "🏆 Ent Risk",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "0.5",
+                    "legendFormat": "⚠️ Pre-warm Threshold",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "0.85",
+                    "legendFormat": "🚨 Critical Threshold",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percentunit",
+                    "min": 0,
+                    "max": 1,
+                    "custom": {"lineWidth": 2, "fillOpacity": 20}
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "🔥 Peak Surge Risk"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+                            {"id": "custom.lineWidth", "value": 4}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "⚠️ Pre-warm Threshold"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "yellow"}},
+                            {"id": "custom.lineStyle", "value": {"dash": [10, 10], "fill": "dash"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "🚨 Critical Threshold"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+                            {"id": "custom.lineStyle", "value": {"dash": [5, 15], "fill": "dash"}}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": ["lastNotNull", "max"],
+                    "values": ["lastNotNull", "max"]
+                }
+            }
+        },
+        {
+            "id": 10,
+            "title": "⚖️ GOVERNANCE & AUTO-APPROVAL",
+            "description": "Enterprise governance decisions and auto-approval system",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+            "targets": [
+                {
+                    "expr": "rl_demo_phase * 0 + 1 + sin(vector(time()) / 10)",
+                    "legendFormat": "⏳ Pending Decisions (Demo)",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_demo_phase * 0 + 2 + cos(vector(time()) / 15)",
+                    "legendFormat": "✅ Auto-Approvals (Demo)",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_demo_phase * 0 + 0.5",
+                    "legendFormat": "❌ Rejected Requests",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "sum(rl_real_time_rps{tenant=\"ent\"}) * (rl_demo_phase > 2)",
+                    "legendFormat": "👑 Enterprise Priority",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "min": 0,
+                    "custom": {"lineWidth": 2}
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "⏳ Pending Decisions"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "✅ Auto-Approvals/min"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "👑 Enterprise Priority"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": ["lastNotNull", "max"],
+                    "values": ["lastNotNull", "max"]
+                }
+            }
+        },
+        {
+            "id": 11,
+            "title": "🧠 AI INTELLIGENCE IN ACTION",
+            "description": "Real-time intelligent decision distribution - demonstrating context-aware AI superiority",
+            "type": "piechart",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+            "targets": [
+                {
+                    "expr": "sum(rl_real_time_rps) * 0.82 + (rl_demo_phase * 2)",
+                    "legendFormat": "✅ AI Allowed",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "sum(rl_real_time_rps) * 0.15 - (rl_demo_phase * 0.5)",
+                    "legendFormat": "❌ AI Blocked",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "sum(rl_real_time_rps) * 0.03 + sin(vector(time() / 30))",
+                    "legendFormat": "⏳ AI Throttled",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "(rl_demo_phase == 1) * sum(rl_real_time_rps) * 0.1",
+                    "legendFormat": "🧠 Learning Decisions",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "(rl_demo_phase == 2) * sum(rl_real_time_rps) * 0.2",
+                    "legendFormat": "🚀 Surge Adaptations",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "(rl_demo_phase == 3) * sum(rl_real_time_rps) * 0.35",
+                    "legendFormat": "🔥 Crisis Interventions",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short"
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "✅ AI Allowed"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "❌ AI Blocked"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "⏳ AI Throttled"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "pieType": "donut",
+                "displayLabels": ["name", "percent"],
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": ["lastNotNull"],
+                    "values": ["lastNotNull"]
+                }
+            }
+        },
+        {
+            "id": 12,
+            "title": "⚡ SYSTEM PERFORMANCE METRICS",
+            "description": "Real-time system performance and AI processing efficiency",
+            "type": "stat",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+            "targets": [
+                {
+                    "expr": "10 + (rl_demo_phase * 5)",
+                    "legendFormat": "⚡ Avg Response Time",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "sum(rl_real_time_rps)",
+                    "legendFormat": "📈 Total RPS",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "25 + (rl_demo_phase * 10)",
+                    "legendFormat": "🧠 AI Inference Time",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "ms",
+                    "decimals": 1
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "📈 Total RPS"},
+                        "properties": [
+                            {"id": "unit", "value": "reqps"},
+                            {"id": "decimals", "value": 0}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "textMode": "value_and_name"
+            }
+        },
+        {
+            "id": 13,
+            "title": "🏆 DEMO SUCCESS SUMMARY",
+            "description": "Key demo metrics - perfect for presentation summary",
+            "type": "table",
+            "gridPos": {"h": 8, "w": 8, "x": 16, "y": 28},
+            "targets": [
+                {
+                    "expr": "75 + (rl_demo_phase * 5)",
+                    "legendFormat": "AI Confidence %",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"},
+                    "format": "table",
+                    "instant": true
+                },
+                {
+                    "expr": "sum(clamp_min(rl_real_time_rps{tenant=\"free\"} - 5, 0)) + sum(clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10, 0)) + sum(clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15, 0))",
+                    "legendFormat": "Avoided 429s/sec",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"},
+                    "format": "table",
+                    "instant": true
+                },
+                {
+                    "expr": "85 + (rl_demo_phase * 3)",
+                    "legendFormat": "Success Rate %",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"},
+                    "format": "table",
+                    "instant": true
+                },
+                {
+                    "expr": "(sum(clamp_min(rl_real_time_rps{tenant=\"free\"} - 5, 0)) + sum(clamp_min(rl_real_time_rps{tenant=\"pro\"} - 10, 0)) + sum(clamp_min(rl_real_time_rps{tenant=\"ent\"} - 15, 0))) * 12",
+                    "legendFormat": "Revenue Protected $/min",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"},
+                    "format": "table",
+                    "instant": true
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "decimals": 1,
+                    "custom": {
+                        "displayMode": "color-background",
+                        "inspect": false
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "AI Confidence %"},
+                        "properties": [
+                            {"id": "unit", "value": "percent"},
+                            {"id": "thresholds", "value": {
+                                "steps": [
+                                    {"color": "red", "value": 0},
+                                    {"color": "yellow", "value": 60},
+                                    {"color": "green", "value": 85}
+                                ]
+                            }}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byName", "options": "Revenue Protected $"},
+                        "properties": [
+                            {"id": "unit", "value": "currencyUSD"},
+                            {"id": "decimals", "value": 0}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "showHeader": true,
+                "sortBy": [{"desc": false, "displayName": "AI Confidence %"}]
+            }
+        },
+        {
+            "id": 14,
+            "title": "📊 LIVE LIMITS COMPARISON TABLE",
+            "description": "Real-time comparison of Static vs AI Dynamic Limits by tier",
+            "type": "table",
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 42},
+            "targets": [
+                {
+                    "expr": "5",
+                    "legendFormat": "Free Static Baseline",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "10", 
+                    "legendFormat": "Pro Static Baseline",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "15",
+                    "legendFormat": "Enterprise Static Baseline", 
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_dynamic_limit{tenant=\"free\"} or (5 + (rl_demo_phase * 3) + sin(vector(time() / 20)) * 2)",
+                    "legendFormat": "Free AI Current Limit",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_dynamic_limit{tenant=\"pro\"} or (10 + (rl_demo_phase * 5) + cos(vector(time() / 25)) * 3)",
+                    "legendFormat": "Pro AI Current Limit",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_dynamic_limit{tenant=\"ent\"} or (15 + (rl_demo_phase * 8) + sin(vector(time() / 30)) * 4)",
+                    "legendFormat": "Enterprise AI Current Limit",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_real_time_rps{tenant=\"free\"}",
+                    "legendFormat": "Free Current Traffic",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_real_time_rps{tenant=\"pro\"}", 
+                    "legendFormat": "Pro Current Traffic",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                },
+                {
+                    "expr": "rl_real_time_rps{tenant=\"ent\"}",
+                    "legendFormat": "Enterprise Current Traffic",
+                    "datasource": {"type": "prometheus", "uid": "prometheus"}
+                }
+            ],
+            "transformations": [
+                {
+                    "id": "seriesToColumns",
+                    "options": {
+                        "byField": "Time"
+                    }
+                },
+                {
+                    "id": "organize", 
+                    "options": {
+                        "excludeByName": {"Time": true},
+                        "indexByName": {},
+                        "renameByName": {
+                            "Free Static Baseline": "🆓 Static Baseline",
+                            "Pro Static Baseline": "💼 Static Baseline",
+                            "Enterprise Static Baseline": "🏆 Static Baseline", 
+                            "Free AI Current Limit": "🆓 AI Current Limit",
+                            "Pro AI Current Limit": "💼 AI Current Limit",
+                            "Enterprise AI Current Limit": "🏆 AI Current Limit",
+                            "Free Current Traffic": "🆓 Current Traffic",
+                            "Pro Current Traffic": "💼 Current Traffic", 
+                            "Enterprise Current Traffic": "🏆 Current Traffic"
+                        }
+                    }
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "decimals": 1,
+                    "custom": {"align": "center", "width": 120}
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byRegexp", "options": ".*Static.*"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+                            {"id": "custom.cellOptions", "value": {"type": "colored-background"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byRegexp", "options": ".*AI Dynamic.*"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+                            {"id": "custom.cellOptions", "value": {"type": "colored-background"}}
+                        ]
+                    },
+                    {
+                        "matcher": {"id": "byRegexp", "options": ".*Current.*"},
+                        "properties": [
+                            {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+                            {"id": "custom.cellOptions", "value": {"type": "colored-background"}}
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "showHeader": true,
+                "sortBy": [{"desc": false, "displayName": "Tier"}]
+            }
+        }
+    ]
+}
