@@ -1,0 +1,161 @@
+<mxfile host="app.diagrams.net" modified="2025-09-19T12:00:00.000Z" agent="5.0" etag="DEF456" version="21.6.5" type="device">
+  <diagram id="governance-queue" name="Governance Queue Logic">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <mxCell id="start" value="AI Decision Generated" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="490" y="40" width="140" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="extract" value="Extract Decision&#xa;Action (up/down/same)&#xa;new_rps, new_burst&#xa;confidence, reason" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="460" y="140" width="200" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="calculate" value="Calculate Change Size&#xa;scaling_factor = new_rps / old_rps&#xa;is_large = factor ≥ 1.5x OR ≤ 0.67x" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="430" y="260" width="260" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="gate" value="Apply or Queue?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="485" y="380" width="150" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="autoApply" value="AUTO APPLY&#xa;High Confidence (≥60%)&#xa;Small Change (&lt;1.5x)&#xa;Action ≠ same" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="160" y="540" width="180" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="queue" value="QUEUE FOR APPROVAL&#xa;Large Change (≥1.5x)&#xa;OR Low Confidence (&lt;60%)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="780" y="540" width="180" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="apply" value="Apply Policy&#xa;Update RPS/Burst limits&#xa;Log decision&#xa;Update metrics&#xa;Add to history" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="160" y="660" width="180" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="pending" value="Pending Decisions Queue&#xa;Generate UUID&#xa;Store decision data&#xa;Update queue metrics&#xa;Log for governance" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="780" y="660" width="180" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="autoLoop" value="Auto-Approval Loop&#xa;(Background Thread)&#xa;Check every 0.1 seconds" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="780" y="800" width="180" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="checkDelay" value="Check Approval Delay&#xa;Auto-approve after 3 seconds&#xa;(DEMO_APPROVAL_DELAY)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="485" y="920" width="150" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="autoApprove" value="AUTO APPROVE&#xa;Remove from queue&#xa;Apply policy&#xa;Update metrics&#xa;Log approval" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="160" y="920" width="180" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="manual" value="Manual Approval&#xa;API Endpoints:&#xa;/ai/approve/{id}&#xa;/ai/approve_all" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="920" width="140" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow1" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="start" target="extract">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="120" as="sourcePoint" />
+            <mxPoint x="560" y="140" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow2" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="extract" target="calculate">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="240" as="sourcePoint" />
+            <mxPoint x="560" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow3" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="calculate" target="gate">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="360" as="sourcePoint" />
+            <mxPoint x="560" y="380" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow4" value="High Confidence + Small Change" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="gate" target="autoApply">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="450" y="450" as="sourcePoint" />
+            <mxPoint x="300" y="540" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow5" value="Large Change OR Low Confidence" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="gate" target="queue">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="650" y="450" as="sourcePoint" />
+            <mxPoint x="800" y="540" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow6" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="autoApply" target="apply">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="250" y="620" as="sourcePoint" />
+            <mxPoint x="250" y="660" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow7" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="queue" target="pending">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="870" y="620" as="sourcePoint" />
+            <mxPoint x="870" y="660" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow8" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="pending" target="autoLoop">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="870" y="740" as="sourcePoint" />
+            <mxPoint x="870" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow9" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="autoLoop" target="checkDelay">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="780" y="880" as="sourcePoint" />
+            <mxPoint x="635" y="920" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow10" value="≥3 seconds" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="checkDelay" target="autoApprove">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="485" y="970" as="sourcePoint" />
+            <mxPoint x="340" y="970" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow11" value="Manual Override" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="pending" target="manual">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="960" y="700" as="sourcePoint" />
+            <mxPoint x="1000" y="920" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow12" value="&lt;3 seconds" style="endArrow=classic;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="checkDelay" target="autoLoop">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="635" y="970" as="sourcePoint" />
+            <mxPoint x="780" y="880" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="criteria" value="DECISION CRITERIA&#xa;&#xa;Auto-Apply IF:&#xa;confidence ≥ 0.6 (60%)&#xa;change factor &lt; 1.5x&#xa;action ≠ same&#xa;&#xa;Queue IF:&#xa;Large change (≥1.5x)&#xa;Low confidence (&lt;60%)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;" vertex="1" parent="1">
+          <mxGeometry x="50" y="40" width="200" height="160" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="metrics" value="METRICS TRACKED&#xa;&#xa;rl_ai_decisions_total&#xa;rl_governance_queue_size&#xa;rl_governance_auto_approvals&#xa;Decision history logging&#xa;Business impact tracking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;" vertex="1" parent="1">
+          <mxGeometry x="50" y="220" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="loopIndicator" value="Continuous Background Processing" style="curved=1;endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=8 8;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1000" y="840" as="sourcePoint" />
+            <mxPoint x="960" y="800" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1040" y="820" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

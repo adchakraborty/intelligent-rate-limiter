@@ -1,0 +1,159 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0" version="28.2.3">
+  <diagram id="ai-call-flow" name="AI Call Flow &amp; Decision Process">
+    <mxGraphModel dx="1273" dy="670" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="heuristicLoop" value="Heuristic Loop&#xa;Every 1.5 seconds&#xa;_heuristics_loop()" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry x="490" y="40" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="checkTraffic" value="Check Traffic per Tenant/Endpoint&#xa;total_requests = ok_count + blocked_count&#xa;window = now - stats_since&#xa;ok_rps = ok_count / window&#xa;blocked_ratio = blocked / total" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="440" y="160" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="trafficGate" value="Has ANY Traffic?&#xa;total_requests &gt; 0" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="485" y="300" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="skipAI" value="SKIP AI CALL&#xa;No traffic to analyze&#xa;Continue to next pair" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+          <mxGeometry x="780" y="300" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="triggerAI" value="🤖 AI CALL TRIGGERED&#xa;Log: tenant/endpoint stats&#xa;Prepare context for OLLAMA&#xa;DEMO MODE: Every traffic window" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="440" y="420" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="preparePrompt" value="Prepare AI Prompt Context&#xa;baseline_rps = PLAN_BASE[tenant]&#xa;revenue_per_req = REVENUE_PER_REQUEST[tenant]&#xa;business_priority = _calculate_business_priority()&#xa;scenario = _classify_traffic_scenario()&#xa;example_rps based on tenant tier" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="400" y="540" width="320" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="ollamaCall" value="OLLAMA API CALL&#xa;POST {OLLAMA_BASE_URL}/api/generate&#xa;Model: llama3.2:3b&#xa;Temperature: 0.0 (deterministic)&#xa;Timeout: 25s, Max Retries: 2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry x="440" y="700" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="promptBox" value="AI PROMPT STRUCTURE&#xa;&#xa;TENANT: {TENANT}&#xa;REVENUE: ${revenue}/request&#xa;LIMIT: {current_rps} RPS&#xa;TRAFFIC: {observed_rps} RPS&#xa;BLOCKED: {blocked_ratio}%&#xa;SCENARIO: {scenario}&#xa;&#xa;SCALING RULES:&#xa;- Enterprise: 25-100 RPS&#xa;- Pro: 12-50 RPS&#xa;- Free: 5-15 RPS&#xa;- High util (&gt;80%): scale up&#xa;- High blocking (&gt;20%): scale up&#xa;&#xa;Respond JSON only:&#xa;{action, new_rps, new_burst, confidence, reason}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;" parent="1" vertex="1">
+          <mxGeometry x="50" y="540" width="300" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="responseGate" value="Response Status?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="485" y="840" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="parseResponse" value="Parse AI Response&#xa;Clean response (remove markdown)&#xa;Extract JSON with regex&#xa;Handle incomplete JSON&#xa;Validate structure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="180" y="960" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="handleError" value="Handle Errors&#xa;• HTTP errors (status != 200)&#xa;• Timeout (&gt;25s)&#xa;• Parse errors&#xa;• Retry logic (max 2 attempts)&#xa;• Extract intent on final failure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+          <mxGeometry x="480" y="960" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="intentExtract" value="Extract Intent&#xa;(Last Resort)&#xa;Look for keywords:&#xa;up/increase/scale&#xa;down/decrease&#xa;Conservative scaling" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry x="750" y="960" width="140" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="validateDecision" value="Validate AI Decision&#xa;_validate_ai_decision()&#xa;• Check action: up/down/same&#xa;• Validate new_rps (1-1000)&#xa;• Validate new_burst (5-5000)&#xa;• Ensure confidence (0.5-1.0)&#xa;• Sanitize reason string" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="180" y="1100" width="200" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="aiEngineStatus" value="Update AI Engine Status&#xa;RL_AI_ENGINE_ACTIVE.set(1)&#xa;Log successful AI decision&#xa;Track confidence metrics&#xa;Update customer satisfaction" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="440" y="1100" width="200" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="applyDecision" value="Apply or Queue Decision&#xa;_apply_or_queue()&#xa;Check confidence &gt;= 60%&#xa;Check change size &lt; 1.5x&#xa;Auto-apply OR queue for governance" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry x="440" y="1260" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="metrics" value="Update Metrics&#xa;RL_AI_CALLS_TOTAL (success/error/timeout)&#xa;RL_AI_CALL_DURATION&#xa;RL_AI_PROMPT_TOKENS&#xa;RL_AI_RESPONSE_TOKENS&#xa;RL_AI_DECISIONS_TOTAL&#xa;RL_AI_CONFIDENCE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry x="720" y="1100" width="200" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="responseExamples" value="AI RESPONSE EXAMPLES&#xa;&#xa;SUCCESS:&#xa;{&#xa;  &quot;action&quot;: &quot;up&quot;,&#xa;  &quot;new_rps&quot;: 25.0,&#xa;  &quot;new_burst&quot;: 75,&#xa;  &quot;confidence&quot;: 0.85,&#xa;  &quot;reason&quot;: &quot;surge_scaling&quot;&#xa;}&#xa;&#xa;MAINTAIN:&#xa;{&#xa;  &quot;action&quot;: &quot;same&quot;,&#xa;  &quot;new_rps&quot;: 12.0,&#xa;  &quot;new_burst&quot;: 36,&#xa;  &quot;confidence&quot;: 0.75,&#xa;  &quot;reason&quot;: &quot;stable_traffic&quot;&#xa;}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;" parent="1" vertex="1">
+          <mxGeometry x="950" y="540" width="180" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="errorTypes" value="ERROR HANDLING&#xa;&#xa;1. TIMEOUT (&gt;25s):&#xa;   - RL_AI_CALLS_TOTAL(timeout)&#xa;   - Retry up to 2 times&#xa;&#xa;2. HTTP ERROR:&#xa;   - Log status code&#xa;   - Retry if not final attempt&#xa;&#xa;3. PARSE ERROR:&#xa;   - Try intent extraction&#xa;   - Use keywords: up/down/scale&#xa;&#xa;4. TOTAL FAILURE:&#xa;   - RL_AI_CALLS_TOTAL(total_failure)&#xa;   - Return empty dict&#xa;   - No fallback (PURE AI MODE)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;" parent="1" vertex="1">
+          <mxGeometry x="950" y="880" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow1" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="heuristicLoop" target="checkTraffic" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="140" as="sourcePoint" />
+            <mxPoint x="560" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow2" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="checkTraffic" target="trafficGate" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="280" as="sourcePoint" />
+            <mxPoint x="560" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow3" value="No Traffic" style="endArrow=classic;html=1;rounded=0;" parent="1" source="trafficGate" target="skipAI" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="635" y="340" as="sourcePoint" />
+            <mxPoint x="780" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow4" value="Has Traffic" style="endArrow=classic;html=1;rounded=0;" parent="1" source="trafficGate" target="triggerAI" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="380" as="sourcePoint" />
+            <mxPoint x="560" y="420" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow5" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="triggerAI" target="preparePrompt" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="520" as="sourcePoint" />
+            <mxPoint x="560" y="540" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow6" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="preparePrompt" target="ollamaCall" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="680" as="sourcePoint" />
+            <mxPoint x="560" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow7" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="ollamaCall" target="responseGate" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="820" as="sourcePoint" />
+            <mxPoint x="560" y="840" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow8" value="Success (200)" style="endArrow=classic;html=1;rounded=0;" parent="1" source="responseGate" target="parseResponse" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="485" y="880" as="sourcePoint" />
+            <mxPoint x="320" y="960" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow9" value="Error/Timeout" style="endArrow=classic;html=1;rounded=0;" parent="1" source="responseGate" target="handleError" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="920" as="sourcePoint" />
+            <mxPoint x="560" y="960" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow10" value="Final Failure" style="endArrow=classic;html=1;rounded=0;" parent="1" source="handleError" target="intentExtract" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="680" y="1010" as="sourcePoint" />
+            <mxPoint x="750" y="1010" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow11" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="parseResponse" target="validateDecision" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="270" y="1080" as="sourcePoint" />
+            <mxPoint x="270" y="1100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow12" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="validateDecision" target="aiEngineStatus" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="380" y="1160" as="sourcePoint" />
+            <mxPoint x="440" y="1160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow13" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="aiEngineStatus" target="applyDecision" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="540" y="1240" as="sourcePoint" />
+            <mxPoint x="540" y="1260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow14" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="aiEngineStatus" target="metrics" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="640" y="1160" as="sourcePoint" />
+            <mxPoint x="720" y="1160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="loopIndicator" value="Continuous Loop&#xa;Every 1.5 seconds" style="curved=1;endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=8 8;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="780" y="80" as="sourcePoint" />
+            <mxPoint x="630" y="80" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="820" y="40" />
+              <mxPoint x="820" y="120" />
+              <mxPoint x="780" y="160" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

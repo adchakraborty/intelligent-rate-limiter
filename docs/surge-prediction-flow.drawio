@@ -1,0 +1,151 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0" version="28.1.0">
+  <diagram id="surge-prediction" name="Surge Prediction Flow">
+    <mxGraphModel dx="1273" dy="670" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="start" value="Traffic Monitoring" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry x="490" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="collect" value="Collect RPS Data&#xa;5-minute rolling window (300s)&#xa;Per tenant+endpoint pair&#xa;30-second data points&#xa;surge_history[tenant,endpoint]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="440" y="120" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="trend" value="Calculate Trend Algorithm&#xa;last_3_points = history[-3:]&#xa;trend = (latest_rps - first_rps) / count&#xa;if len(history) &lt; 2: trend = 0.0&#xa;Window cleanup: keep last 300s" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="440" y="250" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="classify" value="Multi-Level Classification&#xa;Based on trend value" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="475" y="380" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="normal" value="NORMAL GROWTH&#xa;if 0.2 ≤ trend ≤ 2.0:&#xa;  prob = min(30, 10 + trend*8)&#xa;  peak = current + trend*2&#xa;Metrics: RL_SURGE_PREDICTION&#xa;RL_TRAFFIC_TREND" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="120" y="520" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="surge" value="SURGE TRAFFIC&#xa;elif 2.0 &lt; trend ≤ 10.0:&#xa;  prob = min(70, 30 + trend*5)&#xa;  peak = current + trend*3&#xa;Moderate rapid increases&#xa;Business tier aware" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry x="460" y="520" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="ddos" value="DDoS DETECTION&#xa;elif trend &gt; 10.0 OR rps &gt; 50:&#xa;  prob = min(100, 70 + min(30,trend))&#xa;  peak = current + trend*4&#xa;Massive traffic spikes&#xa;Immediate protection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcccc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry x="800" y="520" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="business" value="Business Priority Algorithm&#xa;multiplier = _calculate_business_priority()&#xa;Free: 1.0, Pro: 2.0, Ent: 5.0&#xa;final_prob = prob * (0.8 + mult*0.15)&#xa;final_prob = min(100.0, final_prob)&#xa;Store in surge_predictions[pair]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+          <mxGeometry x="440" y="660" width="220" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="scaling" value="Preemptive Scaling Decision&#xa;if surge_prob &lt; 25: no action&#xa;return scaling_factor" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="475" y="810" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="growth" value="GROWTH SCALING&#xa;25-50% probability&#xa;Ent: 2.2x, Pro: 1.7x, Free: 1.4x&#xa;new_rps = min(500, rps * factor)&#xa;new_burst = min(2000, burst * factor)&#xa;action_type = growth_scaling" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="120" y="940" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="surgeScale" value="SURGE SCALING&#xa;50-80% probability&#xa;Ent: 4.0x, Pro: 2.5x, Free: 1.8x&#xa;Aggressive tier-based scaling&#xa;Moderate protection level&#xa;action_type = surge_scaling" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry x="460" y="940" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="ddosScale" value="DDoS PROTECTION&#xa;80%+ probability OR trend &gt; 15&#xa;Ent: 8.0x, Pro: 5.0x, Free: 3.0x&#xa;Maximum protection scaling&#xa;Emergency response level&#xa;action_type = ddos_protection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcccc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry x="800" y="940" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="metrics" value="Update Prometheus Metrics&#xa;RL_SURGE_PREDICTION.labels(tenant,endpoint)&#xa;RL_TRAFFIC_TREND.labels(tenant,endpoint)&#xa;RL_PREEMPTIVE_SCALING.labels(tenant,action)&#xa;Store surge_predictions[pair] with:&#xa;{probability, scaling_factor, predicted_at, new_rps, action_type}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry x="420" y="1100" width="260" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow1" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="start" target="collect" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="100" as="sourcePoint" />
+            <mxPoint x="550" y="120" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow2" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="collect" target="trend" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="220" as="sourcePoint" />
+            <mxPoint x="550" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow3" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="trend" target="classify" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="350" as="sourcePoint" />
+            <mxPoint x="550" y="380" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow4" value="0.2-2.0" style="endArrow=classic;html=1;rounded=0;" parent="1" source="classify" target="normal" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="450" y="450" as="sourcePoint" />
+            <mxPoint x="250" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow5" value="2.0-10.0" style="endArrow=classic;html=1;rounded=0;" parent="1" source="classify" target="surge" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="480" as="sourcePoint" />
+            <mxPoint x="550" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow6" value="&gt;10.0 or &gt;50RPS" style="endArrow=classic;html=1;rounded=0;" parent="1" source="classify" target="ddos" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="625" y="450" as="sourcePoint" />
+            <mxPoint x="850" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow7" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="normal" target="business" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="300" y="620" as="sourcePoint" />
+            <mxPoint x="440" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow8" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="surge" target="business" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="620" as="sourcePoint" />
+            <mxPoint x="550" y="660" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow9" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="ddos" target="business" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="850" y="620" as="sourcePoint" />
+            <mxPoint x="660" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow10" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="business" target="scaling" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="780" as="sourcePoint" />
+            <mxPoint x="550" y="810" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow11" value="25-50%" style="endArrow=classic;html=1;rounded=0;" parent="1" source="scaling" target="growth" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="450" y="870" as="sourcePoint" />
+            <mxPoint x="250" y="940" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow12" value="50-80%" style="endArrow=classic;html=1;rounded=0;" parent="1" source="scaling" target="surgeScale" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="910" as="sourcePoint" />
+            <mxPoint x="550" y="940" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow13" value="80%+" style="endArrow=classic;html=1;rounded=0;" parent="1" source="scaling" target="ddosScale" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="625" y="870" as="sourcePoint" />
+            <mxPoint x="850" y="940" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow14" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="growth" target="metrics" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="250" y="1060" as="sourcePoint" />
+            <mxPoint x="420" y="1140" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow15" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="surgeScale" target="metrics" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="1060" as="sourcePoint" />
+            <mxPoint x="550" y="1100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow16" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="ddosScale" target="metrics" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="850" y="1060" as="sourcePoint" />
+            <mxPoint x="680" y="1140" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend" value="ALGORITHM OVERVIEW&#xa;&#xa;Data Structure:&#xa;surge_history[tenant,endpoint] = [&#xa;  {timestamp, rps, window: 30}&#xa;]&#xa;&#xa;Window Management:&#xa;• 5-minute rolling buffer (300s)&#xa;• Cleanup: now - 300 cutoff&#xa;• Per-tenant/endpoint tracking&#xa;&#xa;Trend Calculation:&#xa;trend = (last_rps - first_rps) / count&#xa;&#xa;Business Priority:&#xa;Free: 1.0, Pro: 2.0, Ent: 5.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;" parent="1" vertex="1">
+          <mxGeometry x="880" y="30" width="240" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="timing" value="TIMING &amp; EXECUTION&#xa;&#xa;Heuristic Loop: Every 1.5s&#xa;Data Window: 5 minutes (300s)&#xa;Data Points: ~10 points per window&#xa;Trend Analysis: Last 3 points&#xa;&#xa;Business Multiplier:&#xa;final_prob = base_prob * (0.8 + priority*0.15)&#xa;&#xa;Scaling Limits:&#xa;new_rps: min(500.0, current * factor)&#xa;new_burst: min(2000, burst * factor)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;" parent="1" vertex="1">
+          <mxGeometry x="840" y="270" width="320" height="200" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
